@@ -25,7 +25,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future register() async {
 
-    var url = Uri.http("192.168.8.106:3000", '/register');
+    var url = Uri.http("app01.karnetif.com", '/register');
     var response = await http.post(url, headers: {
       'Content-Type': 'application/json',
     }, body: jsonEncode({

@@ -15,7 +15,7 @@ class _MatchScreenState extends State<MatchExchangeScreen> {
   List<MatchExchange> _matchExchanges = [];
 
   Future<void> _loadMatchExchanges() async {
-    var url = Uri.http("192.168.8.106:3000", '/postAd/queryAll');
+    var url = Uri.http("app01.karnetif.com", '/postAd/queryAll');
     var response = await http.get(url);
     final jsonData = jsonDecode(response.body);
     setState(() {

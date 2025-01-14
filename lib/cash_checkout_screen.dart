@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:xchange_app/login_state.dart';
+import 'package:http/http.dart' as http;
+import 'package:xchange_app/match_exchange.dart';
 
 class CashCheckoutScreen extends StatefulWidget {
   const CashCheckoutScreen({super.key});
@@ -22,26 +26,63 @@ class _CashCheckoutScreenState extends State<CashCheckoutScreen> {
   final TextEditingController fromDate = TextEditingController();
   final TextEditingController toDate = TextEditingController();
   final TextEditingController location = TextEditingController();
+  List<MatchExchange> _matchExchanges = [];
+
+  String? selectedId; // To hold the ID passed from TransactionScreen
+  Map<String, dynamic>? postData; // To hold the queried post data
 
   @override
-  Future<void> didChangeDependencies() async {
+  void didChangeDependencies() {
     super.didChangeDependencies();
 
-    final userData = await LoginState.getUserData();
+    // Retrieve arguments passed from the TransactionScreen
+    final args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
 
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    // Set the values from the arguments
     setState(() {
-      role = args['role'];
+      selectedId = args['id']; // Retrieve the selected ID
     });
-    fromCurrency.text = args['fromCurrency'];
-    toCurrency.text = args['toCurrency'];
-    fromAmount.text = args['fromAmount'];
-    toAmount.text = args['toAmount'];
-    name.text = userData!['name'];
-    walletId.text = userData['walletId'];
-    fromDate.text = args['fromDate'];
-    toDate.text = args['toDate'];
-    location.text = args['location'];
+
+    setState(() {
+      role = args['role']; // Retrieve the selected ID
+    });
+
+    // Call the method to fetch data from the database
+    if (selectedId != null) {
+      _fetchPostData(selectedId!);
+    }
+  }
+
+  Future<void> _fetchPostData(String id) async {
+    try {
+      var url = Uri.http("app01.karnetif.com", '/postAd/queryById', {'id': id});
+      var response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        // Decode the JSON response into a Map
+        final Map<String, dynamic> postData = jsonDecode(response.body);
+
+        setState(() {
+          // Set the text fields with the queried data
+          name.text = postData['name'] ?? '';
+          walletId.text = postData['walletId'] ?? '';
+          toCurrency.text = postData['to_currency'] ?? '';
+          fromCurrency.text = postData['from_currency'] ?? '';
+          toAmount.text = postData['to_amount']?.toString() ?? '';
+          fromAmount.text = postData['from_amount']?.toString() ?? '';
+          fromDate.text = postData['from_date'] ?? '';
+          toDate.text = postData['to_date'] ?? '';
+          location.text = postData['location'] ?? '';
+        });
+      } else {
+        // Handle non-200 status codes
+        print("Failed to load post data: ${response.statusCode}");
+      }
+    } catch (e) {
+      // Handle any exceptions
+      print("Error fetching post data: $e");
+    }
   }
 
   @override
@@ -280,6 +321,7 @@ class _CashCheckoutScreenState extends State<CashCheckoutScreen> {
                     ? ElevatedButton(
                         onPressed: () {
                           Navigator.pushNamed(context, '/qrView', arguments: {
+                            'role': "RECEIVER",
                             'name': name,
                             'walletId': walletId,
                             'fromCurrency': fromCurrency,
@@ -295,7 +337,8 @@ class _CashCheckoutScreenState extends State<CashCheckoutScreen> {
                       )
                     : ElevatedButton(
                         onPressed: () {
-                           Navigator.pushNamed(context, '/qrScan', arguments: {
+                          Navigator.pushNamed(context, '/qrSnap', arguments: {
+                            'role': "PAYER",
                             'name': name.text,
                             'walletId': walletId.text,
                             'fromCurrency': fromCurrency.text,

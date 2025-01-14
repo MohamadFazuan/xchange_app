@@ -11,7 +11,7 @@ class ExchangeScreen extends StatefulWidget {
 
 class _ExchangeScreenState extends State<ExchangeScreen> {
   final _formKey = GlobalKey<FormState>();
-  String? _fromCurrency;
+  String? _fromCurrency= 'MYR';
   String? _toCurrency = 'USD';
   String? _exchangeAmount = "";
   String? _amount = "";
@@ -20,14 +20,14 @@ class _ExchangeScreenState extends State<ExchangeScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final args =
-        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    _fromCurrency = args['currency'];
-    _amount = args['amount'];
+    // final args =
+    //     ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    // _fromCurrency = args['currency'];
+    // _amount = args['amount'];
   }
 
   Future<double> _getExchangeRate() async {
-    var url = Uri.http("192.168.8.106:3000", '/exchange-rate');
+    var url = Uri.http("app01.karnetif.com", '/exchange-rate');
     final response = await http.post(
       url,
       headers: {
@@ -153,7 +153,12 @@ class _ExchangeScreenState extends State<ExchangeScreen> {
                   if (_formKey.currentState!.validate()) {
                     _formKey.currentState!.save();
                     // TODO: Implement exchange logic here
-                    Navigator.pushNamed(context, '/friends');
+                    Navigator.pushNamed(context, '/friends', arguments: {
+                      'fromCurrency': _fromCurrency,
+                      'toCurrency': _toCurrency,
+                      'fromAmount': _amount,
+                      'toAmount': _exchangeAmount,
+                    });
                   }
                 },
                 child: const Text('Find Nearby'),

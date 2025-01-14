@@ -1,9 +1,7 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:xchange_app/friend.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:xchange_app/login_state.dart';
 
 class FriendScreen extends StatefulWidget {
   const FriendScreen({super.key});
@@ -13,114 +11,97 @@ class FriendScreen extends StatefulWidget {
 }
 
 class _FriendScreenState extends State<FriendScreen> {
-  final TextEditingController _searchController = TextEditingController();
-  List<Map<String, dynamic>> friends = [];
-  List<Map<String, dynamic>> filteredFriends = [];
+  List<Map<String, dynamic>> users = []; // This will store the list of users
+  String? toAmount, fromAmount, toCurrency, fromCurrency, walletId;
 
-  List<Friends> friend = [];
+  @override
+  void didChangeDependencies() async {
+    super.didChangeDependencies();
 
-  Future<void> _loadMatchExchanges() async {
-    var url = Uri.http("192.168.8.106:3000", '/friend/queryAll');
-    var response = await http.get(url);
-    final jsonData = jsonDecode(response.body);
+    final userData = await LoginState.getUserData();
+    final argsUserState =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    walletId = userData?['walletId'];
+
+    // Retrieve arguments passed from the TransactionScreen
+    final args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+
     setState(() {
-      friend = jsonData.map<Friends>((data) => Friends.fromJson(data)).toList();
+      fromCurrency = args['fromCurrency'];
+      toCurrency = args['toCurrency'];
+      fromAmount = args['fromAmount'];
+      toAmount = args['toAmount'];
     });
+  }
+
+  // Fetch all users from the backend
+  Future<void> _loadAllUsers() async {
+    var url =
+        Uri.http('app01.karnetif.com', '/users'); // URL to fetch all users
+    var response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      setState(() {
+        users = List<Map<String, dynamic>>.from(jsonData).where((user) {
+        // Exclude the logged-in user by comparing names
+        return user['walletId'] != walletId;
+      }).toList();
+      });
+    } else {
+      // Handle error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load users')),
+      );
     }
+  }
 
   @override
   void initState() {
     super.initState();
-    filteredFriends = friends;
-  }
-
-  void _searchFriends(String query) {
-    setState(() {
-      filteredFriends = friends.where((friend) => friend['name'].toLowerCase().contains(query.toLowerCase())).toList();
-    });
+    _loadAllUsers(); // Load all users when the screen is initialized
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Friends'),
+        title: const Text('Nearby'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _searchController,
-              decoration: const InputDecoration(
-                hintText: 'Search friends',
-                prefixIcon: Icon(Icons.search),
-              ),
-              onChanged: _searchFriends,
-            ),
-            const SizedBox(height: 20),
-            const Text("Long press to delete friends"),
-            const SizedBox(height: 20),
-            Expanded( // Wrap ListView.builder with Expanded
-              child: ListView.builder(
-                itemCount: filteredFriends.length,
+        child: users.isEmpty
+            ? const Center(child: CircularProgressIndicator())
+            : ListView.builder(
+                itemCount: users.length,
                 itemBuilder: (context, index) {
-                  final friend = filteredFriends[index];
+                  final selectedUser = users[index];
                   return Card(
                     child: ListTile(
-                      leading: const Icon(Icons.person), // Icon at the left side
-                      title: Text(friend['name']),
-                      subtitle: Text('Status: ${friend['status']}'),
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('${friend['distance']}'),
-                          const SizedBox(height: 5),
+                      leading:
+                          const Icon(Icons.person), // Icon at the left side
+                      title: Text(selectedUser['username'] ??
+                          'No Name'), // Display username
+                      subtitle: Text(
+                          'Email: ${selectedUser['email']}'), // Display email
+                      trailing:
                           const Icon(Icons.call, size: 18, color: Colors.blue),
-                        ],
-                      ),
                       onTap: () {
-                        Navigator.pushNamed(context, '/checkout', arguments: friend);
-                      },
-                      onLongPress: () {
-                        // Show delete confirmation dialog
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Delete Friend'),
-                            content: Text('Are you sure you want to delete ${friend['name']}?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    friends.remove(friend);
-                                    filteredFriends = friends; // Update filtered list
-                                    Navigator.pop(context); // Close dialog
-                                  });
-                                },
-                                child: const Text('Delete'),
-                              ),
-                            ],
-                          ),
-                        );
+                        // Navigate to user details page (implement as needed)
+                        Navigator.pushNamed(context, '/checkout/nearby',
+                            arguments: {
+                              'selectedUser': selectedUser,
+                              'fromCurrency': fromCurrency,
+                              'toCurrency': toCurrency,
+                              'fromAmount': fromAmount,
+                              'toAmount': toAmount,
+                            });
                       },
                     ),
                   );
                 },
               ),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/add_friend');
-        },
-        child: const Icon(Icons.add),
       ),
     );
   }

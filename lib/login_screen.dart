@@ -3,7 +3,6 @@ import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:xchange_app/login_state.dart';
-import 'package:xchange_app/main.dart';
 import 'package:xchange_app/wallet_screen.dart';
 import 'package:http/http.dart' as http;
 
@@ -20,7 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _password = TextEditingController();
 
   Future<String> getWalletId() async {
-    var url = Uri.http("192.168.8.106:3000", '/getWalletId');
+    var url = Uri.http("app01.karnetif.com", '/getWalletId');
     var response = await http.post(url, headers: {
       'Content-Type': 'application/json',
     }, body: jsonEncode({
@@ -32,14 +31,13 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future login() async {
-    var url = Uri.http("192.168.8.106:3000", '/login');
+    var url = Uri.http("app01.karnetif.com", '/login');
     var response = await http.post(url, headers: {
       'Content-Type': 'application/json',
     }, body: jsonEncode({
       "username": _username.text,
       "password": _password.text,
     }));
-    print(response.body);
     Map<String, dynamic> data = json.decode(response.body);
 
     if (data["message"] == "Failed to login") {

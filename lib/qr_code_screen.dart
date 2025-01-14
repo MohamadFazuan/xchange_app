@@ -1,12 +1,13 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'package:xchange_app/login_state.dart';
 import 'package:xchange_app/match_exchange.dart';
+import 'package:xchange_app/receipt_screen.dart';
 
 class QRCodeScreen extends StatefulWidget {
   const QRCodeScreen({super.key});
-
 
   @override
   State<QRCodeScreen> createState() => _QRCodeScreenState();
@@ -15,41 +16,96 @@ class QRCodeScreen extends StatefulWidget {
 class _QRCodeScreenState extends State<QRCodeScreen> {
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
   var dataQr = '';
-  final String key = 'Xchange';
+  late MatchExchange matchExchange;
+  Map<String, dynamic> userData = {};
+  Map<String, dynamic> exchange = {};
+  final String apiUrl =
+      'http://app01.karnetif.com/transaction/add'; // Backend API URL
 
   @override
   Future<void> didChangeDependencies() async {
     super.didChangeDependencies();
 
+    // Retrieve user data from LoginState
+    userData = (await LoginState.getUserData()) ?? {};
     final args =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
 
-    final matchExchange = MatchExchange(
-        name: args['name'].text,
-        walletId: args['walletId'].text,
-        fromCurrency: args['fromCurrency'].text,
-        toCurrency: args['toCurrency'].text,
-        fromAmount: args['fromAmount'].text,
-        toAmount: args['toAmount'].text,
-        fromDate: args['fromDate'].text,
-        toDate: args['toDate'].text,
-        location: args['location'].text,
-        role: '');
+    matchExchange = MatchExchange(
+      id: args['id'],
+      role: args['role'],
+      name: args['name'],
+      walletId: args['walletId'],
+      fromCurrency: args['fromCurrency'],
+      toCurrency: args['toCurrency'],
+      fromAmount: args['fromAmount'],
+      toAmount: args['toAmount'],
+      fromDate: args['fromDate'],
+      toDate: args['toDate'],
+      location: args['location'],
+    );
 
-    // Now you can use the matchExchange object
-    // For example, you can convert it to JSON:
+    // Convert matchExchange to JSON for QR code
     final jsonString = jsonEncode(matchExchange.toJson());
-    print(jsonString);
+    exchange = matchExchange.toJson();
     setState(() {
-      dataQr = jsonString.toString();
+      dataQr = jsonString;
     });
+  }
+
+  Future<void> addTransaction() async {
+    try {
+      // Retrieve the receiverWalletId from userData
+      final receiverWalletId = userData['walletId'];
+
+      if (receiverWalletId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Receiver wallet ID not found')),
+        );
+        return;
+      }
+
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'from': matchExchange.walletId,
+          'to': receiverWalletId,
+          'fromAmount': matchExchange.fromAmount,
+          'toAmount': matchExchange.toAmount,
+          'fromCurrency': matchExchange.fromCurrency,
+          'toCurrency': matchExchange.toCurrency,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        final receiptData = jsonDecode(response.body);
+
+        // Navigate to the ReceiptScreen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ReceiptScreen(receiptData: exchange),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Failed to add transaction: ${response.body}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Generate QR Code"),
+        title: const Text("Receiver QR Code"),
       ),
       body: Center(
         child: Column(
@@ -61,25 +117,19 @@ class _QRCodeScreenState extends State<QRCodeScreen> {
               size: 200,
               gapless: false,
               errorStateBuilder: (cxt, err) {
-                return Container(
-                  child: const Center(
-                    child: Text(
-                      'Uh oh! Something went wrong...',
-                      textAlign: TextAlign.center,
-                    ),
+                return const Center(
+                  child: Text(
+                    'Uh oh! Something went wrong...',
+                    textAlign: TextAlign.center,
                   ),
                 );
               },
             ),
             const SizedBox(height: 20),
-            // TextField(
-            //   controller: TextEditingController()..text = _dataString,
-            //   decoration: const InputDecoration(
-            //     labelText: "Enter QR Code data",
-            //     border: OutlineInputBorder(),
-            //   ),
-            //   onChanged: (value) => setState(() => _dataString = value),
-            // ),
+            ElevatedButton(
+              onPressed: addTransaction,
+              child: const Text('RECEIVED'),
+            ),
           ],
         ),
       ),

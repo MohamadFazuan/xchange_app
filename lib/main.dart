@@ -5,6 +5,8 @@ import 'package:xchange_app/about_screen.dart';
 import 'package:xchange_app/add_card_screen.dart';
 import 'package:xchange_app/add_friend_screen.dart';
 import 'package:xchange_app/cash_checkout_screen.dart';
+import 'package:xchange_app/cash_checkout_nearby_screen.dart';
+import 'package:xchange_app/login_state.dart';
 import 'package:xchange_app/change_password_screen.dart';
 import 'package:xchange_app/exchange_screen.dart';
 import 'package:xchange_app/login_screen.dart';
@@ -19,6 +21,7 @@ import 'package:xchange_app/transaction_screen.dart';
 import 'package:xchange_app/friend_screen.dart';
 import 'package:xchange_app/card_screen.dart';
 import 'package:xchange_app/account_screen.dart';
+import 'package:xchange_app/receipt_screen.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,15 +33,18 @@ void main() async{
   }
   WidgetsFlutterBinding.ensureInitialized();
   await SharedPreferences.getInstance();
+  bool isLoggedIn = await LoginState.isLoggedIn();
 
   // Change the default factory. On iOS/Android, if not using `sqlite_flutter_lib` you can forget
   // this step, it will use the sqlite version available on the system.
   databaseFactory = databaseFactoryFfi;
-  runApp(const MyApp());
+  runApp(const MyApp(isLoggedIn: false));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+
+  final bool isLoggedIn;
+  const MyApp({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +53,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const LoginScreen(),
+      initialRoute: isLoggedIn ? '/wallet' : '/login',
       debugShowCheckedModeBanner: false,
       routes: {
         '/login': (context) => const LoginScreen(),
@@ -65,9 +71,11 @@ class MyApp extends StatelessWidget {
         '/transaction': (context) => const TransactionScreen(),
         '/post': (context) => const PostAdScreen(),
         '/checkout':(context) => const CashCheckoutScreen(),
+        '/checkout/nearby': (context) => const CashCheckoutNearbyScreen(),
         '/match': (context) => const MatchExchangeScreen(),
         '/qrView': (context) => const QRCodeScreen(),
         '/qrSnap': (context) => const QRViewExample(),
+        '/receipt': (context) => const ReceiptScreen(receiptData: {},),
       },
     );
   }

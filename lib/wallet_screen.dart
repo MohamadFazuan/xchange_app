@@ -102,141 +102,144 @@ class _WalletScreenState extends State<WalletScreen> {
       ),
       body: Container(
         padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            // Title
-            const Text(
-              'XCHANGE',
-              style: TextStyle(
-                fontSize: 50,
-                fontWeight: FontWeight.bold,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              // Title
+              const Text(
+                'XCHANGE',
+                style: TextStyle(
+                  fontSize: 50,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            const SizedBox(height: 5),
-            const Text(
-              'Copyright SDIT 2020',
-              style: TextStyle(
-                fontSize: 12,
+              const SizedBox(height: 5),
+              const Text(
+                'Copyright SDIT 2020',
+                style: TextStyle(
+                  fontSize: 12,
+                ),
               ),
-            ),
-            const SizedBox(height: 100),
+              const SizedBox(height: 50),
 
-            // Currency Carousel
-            SizedBox(
-              height: 150,
-              child: PageView(
-                children: [
-                  CurrencyCard(
-                    currency: 'MYR',
-                    amount: 'RM 100.00',
-                    onSelect: _onCardSelect,
-                  ),
-                  CurrencyCard(
-                    currency: 'USD',
-                    amount: '\$ 100.00',
-                    onSelect: _onCardSelect,
-                  ),
-                  CurrencyCard(
-                    currency: 'EUR',
-                    amount: '€ 100.00',
-                    onSelect: _onCardSelect,
-                  ),
-                  CurrencyCard(
-                    currency: 'GBP',
-                    amount: '£ 100.00',
-                    onSelect: _onCardSelect,
-                  ),
-                  CurrencyCard(
-                    currency: 'JPY',
-                    amount: 'Y 100.00',
-                    onSelect: _onCardSelect,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 100),
+              // // Currency Carousel
+              // SizedBox(
+              //   height: 150,
+              //   child: PageView(
+              //     children: [
+              //       CurrencyCard(
+              //         currency: 'MYR',
+              //         amount: 'RM 100.00',
+              //         onSelect: _onCardSelect,
+              //       ),
+              //       CurrencyCard(
+              //         currency: 'USD',
+              //         amount: '\$ 100.00',
+              //         onSelect: _onCardSelect,
+              //       ),
+              //       CurrencyCard(
+              //         currency: 'EUR',
+              //         amount: '€ 100.00',
+              //         onSelect: _onCardSelect,
+              //       ),
+              //       CurrencyCard(
+              //         currency: 'GBP',
+              //         amount: '£ 100.00',
+              //         onSelect: _onCardSelect,
+              //       ),
+              //       CurrencyCard(
+              //         currency: 'JPY',
+              //         amount: 'Y 100.00',
+              //         onSelect: _onCardSelect,
+              //       ),
+              //     ],
+              //   ),
+              // ),
+              const SizedBox(height: 100),
 
-            // Buttons
-            ElevatedButton(
-              onPressed: () {
-                if (_selectedCurrency != null && _selectedAmount != null) {
-                  Navigator.pushNamed(context, '/exchange', arguments: {
-                    'currency': _selectedCurrency,
-                    'amount': _selectedAmount,
-                  });
-                } else {
-                  // Show an error message if no card is selected
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please select a card')),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                // backgroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 32.0),
-                textStyle: const TextStyle(
-                  fontSize: 18,
-                  // fontWeight: FontWeight.bold,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-              ),
-              child: const Text('Cash Exchange'),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                // backgroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 32.0),
-                textStyle: const TextStyle(
-                  fontSize: 18,
-                  // fontWeight: FontWeight.bold,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-              ),
-              child: const Text('eCash Exchange'),
-            ),
-            const SizedBox(height: 100),
-
-            // Logout Button
-            Center(
-              child: ElevatedButton(
-                onPressed: () async {
-                  // Implement logout functionality here
-                  if (await LoginState.isLoggedIn()) {
-                    await LoginState.setLoggedIn(false);
-                    Fluttertoast.showToast(
-                      backgroundColor: Colors.green,
-                      textColor: Colors.white,
-                      msg: 'User logged out',
-                      toastLength: Toast.LENGTH_SHORT,
-                    );
-                  }
-                  Navigator.pushNamedAndRemoveUntil(
-                      context, '/login', (route) => false);
+              // Buttons
+              ElevatedButton(
+                onPressed: () {
+                  // if (_selectedCurrency != null && _selectedAmount != null) {
+                  //   Navigator.pushNamed(context, '/exchange', arguments: {
+                  //     'currency': _selectedCurrency,
+                  //     'amount': _selectedAmount,
+                  //   });
+                  // } else {
+                  //   // Show an error message if no card is selected
+                  //   ScaffoldMessenger.of(context).showSnackBar(
+                  //     const SnackBar(content: Text('Please select a card')),
+                  //   );
+                  // }
+                  Navigator.pushNamed(context, '/exchange');
                 },
                 style: ElevatedButton.styleFrom(
-                  // backgroundColor: Colors.grey,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 12.0, horizontal: 32.0),
+                  // backgroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 32.0),
                   textStyle: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 18,
                     // fontWeight: FontWeight.bold,
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10.0),
                   ),
                 ),
-                child: const Text('Logout'),
+                child: const Text('Cash Exchange'),
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: null,
+                style: ElevatedButton.styleFrom(
+                  // backgroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 32.0),
+                  textStyle: const TextStyle(
+                    fontSize: 18,
+                    // fontWeight: FontWeight.bold,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                ),
+                child: const Text('eCash Exchange'),
+              ),
+              const SizedBox(height: 100),
+
+              // Logout Button
+              Center(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    // Implement logout functionality here
+                    if (await LoginState.isLoggedIn()) {
+                      await LoginState.setLoggedIn(false);
+                      Fluttertoast.showToast(
+                        backgroundColor: Colors.green,
+                        textColor: Colors.white,
+                        msg: 'User logged out',
+                        toastLength: Toast.LENGTH_SHORT,
+                      );
+                    }
+                    Navigator.pushNamedAndRemoveUntil(
+                        context, '/login', (route) => false);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    // backgroundColor: Colors.grey,
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 12.0, horizontal: 32.0),
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      // fontWeight: FontWeight.bold,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                  ),
+                  child: const Text('Logout'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
