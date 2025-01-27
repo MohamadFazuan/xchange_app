@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "485826837489",
+    "project_id": "xchange-84c6d",
+    "storage_bucket": "xchange-84c6d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:485826837489:android:30ea7a9fd2d4391e52e250",
+        "android_client_info": {
+          "package_name": "com.example.xchange_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNfGuImVq2n7tiHfuXlwK7wxb0vljueY8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:485826837489:android:fb027eceb17af97c52e250",
+        "android_client_info": {
+          "package_name": "com.xchange.xchange"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNfGuImVq2n7tiHfuXlwK7wxb0vljueY8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

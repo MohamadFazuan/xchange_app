@@ -1,5 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:xchange_app/wallet_screen.dart';
+import 'package:http/http.dart' as http;
 
 class ReceiptScreen extends StatefulWidget {
   final Map<String, dynamic> receiptData;
@@ -7,48 +9,134 @@ class ReceiptScreen extends StatefulWidget {
   const ReceiptScreen({Key? key, required this.receiptData}) : super(key: key);
 
   @override
-  _ReceiptPageState createState() => _ReceiptPageState();
+  _ReceiptScreenState createState() => _ReceiptScreenState();
 }
 
-class _ReceiptPageState extends State<ReceiptScreen> {
+class _ReceiptScreenState extends State<ReceiptScreen> {
+  String? from, to, fromCurrency, toCurrency, fromAmount, toAmount;
+  late Map<String, dynamic> expectedArgs;
+ 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Retrieve arguments passed from the previous screen
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    if (args != null) {
+      setState(() {
+        from = args['from'];
+        to = args['to'];
+        fromCurrency = args['fromCurrency'] ?? '';
+        toCurrency = args['toCurrency'] ?? '';
+        fromAmount = args['fromAmount'] ?? '';
+        toAmount = args['toAmount'] ?? '';
+      });
+    }
+  }
+
+  // Future<void> addTransaction() async {
+  //   try {
+  //     var url = Uri.http('192.168.0.20:3000', '/transaction/add');
+  //     var response = await http.post(
+  //       url,
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: jsonEncode({
+  //         "from": from,
+  //         "to": to,
+  //         "fromCurrency": fromCurrency,
+  //         "toCurrency": toCurrency,
+  //         "fromAmount": fromAmount,
+  //         "toAmount": toAmount,
+  //       }),
+  //     );
+
+  //     if (response.statusCode == 201) {
+  //       final receiptData = jsonDecode(response.body);
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(content: Text('Transaction added successfully!')),
+  //       );
+  //       Navigator.pushReplacementNamed(context, '/wallet',
+  //           arguments: receiptData);
+  //     } else {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //             content: Text('Failed to add transaction: ${response.body}')),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Error: $e')),
+  //     );
+  //   }
+  // }
+
   @override
   Widget build(BuildContext context) {
+    final receiptData = widget.receiptData;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Receipt"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Transaction Receipt',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.5),
+                spreadRadius: 2,
+                blurRadius: 4,
+                offset: const Offset(0, 2),
               ),
-            ),
-            const SizedBox(height: 20),
-            _buildReceiptDetail('Name', widget.receiptData['name']),
-            _buildReceiptDetail('Wallet ID', widget.receiptData['walletId']),
-            _buildReceiptDetail(
-                'From Currency', widget.receiptData['fromCurrency']),
-            _buildReceiptDetail(
-                'To Currency', widget.receiptData['toCurrency']),
-            _buildReceiptDetail(
-                'From Amount', widget.receiptData['fromAmount']),
-            _buildReceiptDetail('To Amount', widget.receiptData['toAmount']),
-            const Spacer(),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.popAndPushNamed(context, '/wallet');
-                },
-                child: const Text('Done'),
+            ],
+          ),
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Column(
+                  children: const [
+                    Text(
+                      'XCHANGE APP',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Transaction Receipt',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                  ],
+                ),
               ),
-            )
-          ],
+              const Divider(thickness: 2, height: 30),
+              _buildReceiptDetail('From', from),
+              _buildReceiptDetail('To', to),
+              _buildReceiptDetail('From Currency', fromCurrency),
+              _buildReceiptDetail('To Currency', toCurrency),
+              _buildReceiptDetail('From Amount', fromAmount),
+              _buildReceiptDetail('To Amount', toAmount),
+              const Divider(thickness: 2, height: 30),
+              const SizedBox(height: 10),
+              Center(
+                child: ElevatedButton(
+                  onPressed: (){
+                    Navigator.pushReplacementNamed(context, '/wallet');
+                  },
+                  child: const Text('Confirm'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -56,15 +144,21 @@ class _ReceiptPageState extends State<ReceiptScreen> {
 
   Widget _buildReceiptDetail(String title, dynamic value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             title,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
-          Text(value.toString()),
+          Flexible(
+            child: Text(
+              value?.toString() ?? 'N/A',
+              style: const TextStyle(fontSize: 16),
+              textAlign: TextAlign.right,
+            ),
+          ),
         ],
       ),
     );

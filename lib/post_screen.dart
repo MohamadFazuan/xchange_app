@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:xchange_app/match_screen.dart';
 import 'package:xchange_app/wallet_screen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class PostAdScreen extends StatefulWidget {
   const PostAdScreen({super.key});
@@ -57,7 +58,7 @@ class _PostAdScreenState extends State<PostAdScreen> {
       String taxCharges,
       String serviceFee,
       String total) async {
-    var url = Uri.http("app01.karnetif.com", '/postAd');
+    var url = Uri.http('192.168.0.20:3000', '/postAd');
     var response = await http.post(url,
         headers: {
           'Content-Type': 'application/json',

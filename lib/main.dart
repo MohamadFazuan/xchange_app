@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:xchange_app/about_screen.dart';
 import 'package:xchange_app/add_card_screen.dart';
@@ -11,9 +13,12 @@ import 'package:xchange_app/change_password_screen.dart';
 import 'package:xchange_app/exchange_screen.dart';
 import 'package:xchange_app/login_screen.dart';
 import 'package:xchange_app/match_screen.dart';
+import 'package:xchange_app/notification_screen.dart';
+import 'package:xchange_app/notification_state.dart';
 import 'package:xchange_app/post_screen.dart';
-import 'package:xchange_app/qr_code_screen.dart';
-import 'package:xchange_app/qr_view.dart';
+import 'package:xchange_app/posted_ad.dart';
+import 'package:xchange_app/qr_code_content.dart';
+import 'package:xchange_app/qr_scanner.dart';
 import 'package:xchange_app/register_screen.dart';
 import 'package:xchange_app/setting_screen.dart';
 import 'package:xchange_app/wallet_screen.dart';
@@ -22,22 +27,17 @@ import 'package:xchange_app/friend_screen.dart';
 import 'package:xchange_app/card_screen.dart';
 import 'package:xchange_app/account_screen.dart';
 import 'package:xchange_app/receipt_screen.dart';
+import 'package:xchange_app/posted_ad.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:xchange_app/services/notification_service.dart';
 
-void main() async{
-  if (Platform.isWindows || Platform.isLinux) {
-    // Initialize FFI
-    sqfliteFfiInit();
-  }
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SharedPreferences.getInstance();
-  bool isLoggedIn = await LoginState.isLoggedIn();
-
-  // Change the default factory. On iOS/Android, if not using `sqlite_flutter_lib` you can forget
-  // this step, it will use the sqlite version available on the system.
-  databaseFactory = databaseFactoryFfi;
+  await Firebase.initializeApp();
+  await NotificationService().initialize();
+  
   runApp(const MyApp(isLoggedIn: false));
 }
 
@@ -70,12 +70,13 @@ class MyApp extends StatelessWidget {
         '/wallet': (context) => const WalletScreen(),
         '/transaction': (context) => const TransactionScreen(),
         '/post': (context) => const PostAdScreen(),
-        '/checkout':(context) => const CashCheckoutScreen(),
+        '/checkout': (context) => const CashCheckoutScreen(),
         '/checkout/nearby': (context) => const CashCheckoutNearbyScreen(),
         '/match': (context) => const MatchExchangeScreen(),
-        '/qrView': (context) => const QRCodeScreen(),
-        '/qrSnap': (context) => const QRViewExample(),
-        '/receipt': (context) => const ReceiptScreen(receiptData: {},),
+        '/qrSnap': (context) => const QRScanner(),
+        '/postedAd' : (context) => const PostedAd(),
+        '/receipt': (context) => const ReceiptScreen(receiptData: {}),
+        '/notification': (context) => NotificationScreen(),
       },
     );
   }

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:xchange_app/custom_drawer.dart';
 import 'package:xchange_app/login_state.dart';
+import 'package:badges/badges.dart' as badges;
+import 'package:xchange_app/notification_state.dart';
+import 'package:xchange_app/services/notification_service.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
@@ -14,6 +18,24 @@ class _WalletScreenState extends State<WalletScreen> {
   bool selected = false;
   String? _selectedCurrency;
   String? _selectedAmount;
+  String? walletId, userName;
+  bool hasUnreadNotifications = false;
+
+  @override
+  void didChangeDependencies() async {
+    super.didChangeDependencies();
+
+    final userData = await LoginState.getUserData();
+
+    if (userData != null) {
+      setState(() {
+        userName = userData['name'];
+        walletId = userData['walletId'];
+      });
+    } else {
+      print('No user data found or name key is missing.');
+    }
+  }
 
   void _onCardSelect(String currency, String amount) {
     setState(() {
@@ -28,77 +50,10 @@ class _WalletScreenState extends State<WalletScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.blue,
-              ),
-              child: Text('XCHANGE'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.home),
-              title: const Text('Home'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/wallet');
-              },
-            ),
-            // ListTile(
-            //   leading: Icon(Icons.swap_horiz),
-            //   title: Text('Exchange'),
-            //   onTap: () {
-            //     Navigator.pop(context);
-            //     Navigator.pushNamed(context, '/exchange');
-            //   },
-            // ),
-            ListTile(
-              leading: const Icon(Icons.list),
-              title: const Text('Post'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/transaction');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.account_circle),
-              title: const Text('Account'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/account');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.people),
-              title: const Text('Friends'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/friends');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Setting'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/setting');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Logout'),
-              onTap: () {
-                _logout();
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                    '/login', (Route<dynamic> route) => false);
-              },
-            ),
-          ],
-        ),
+    return CustomScaffold(
+      appBarTitle: "",
+      appBar: AppBar(
+        title: const Text('Wallet'),
       ),
       body: Container(
         padding: const EdgeInsets.all(20.0),
@@ -122,62 +77,17 @@ class _WalletScreenState extends State<WalletScreen> {
                   fontSize: 12,
                 ),
               ),
-              const SizedBox(height: 50),
-
-              // // Currency Carousel
-              // SizedBox(
-              //   height: 150,
-              //   child: PageView(
-              //     children: [
-              //       CurrencyCard(
-              //         currency: 'MYR',
-              //         amount: 'RM 100.00',
-              //         onSelect: _onCardSelect,
-              //       ),
-              //       CurrencyCard(
-              //         currency: 'USD',
-              //         amount: '\$ 100.00',
-              //         onSelect: _onCardSelect,
-              //       ),
-              //       CurrencyCard(
-              //         currency: 'EUR',
-              //         amount: '€ 100.00',
-              //         onSelect: _onCardSelect,
-              //       ),
-              //       CurrencyCard(
-              //         currency: 'GBP',
-              //         amount: '£ 100.00',
-              //         onSelect: _onCardSelect,
-              //       ),
-              //       CurrencyCard(
-              //         currency: 'JPY',
-              //         amount: 'Y 100.00',
-              //         onSelect: _onCardSelect,
-              //       ),
-              //     ],
-              //   ),
-              // ),
-              const SizedBox(height: 100),
+              const SizedBox(height: 150),
 
               // Buttons
               ElevatedButton(
                 onPressed: () {
-                  // if (_selectedCurrency != null && _selectedAmount != null) {
-                  //   Navigator.pushNamed(context, '/exchange', arguments: {
-                  //     'currency': _selectedCurrency,
-                  //     'amount': _selectedAmount,
-                  //   });
-                  // } else {
-                  //   // Show an error message if no card is selected
-                  //   ScaffoldMessenger.of(context).showSnackBar(
-                  //     const SnackBar(content: Text('Please select a card')),
-                  //   );
-                  // }
                   Navigator.pushNamed(context, '/exchange');
                 },
                 style: ElevatedButton.styleFrom(
                   // backgroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 32.0),
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 16.0, horizontal: 32.0),
                   textStyle: const TextStyle(
                     fontSize: 18,
                     // fontWeight: FontWeight.bold,
@@ -193,7 +103,8 @@ class _WalletScreenState extends State<WalletScreen> {
                 onPressed: null,
                 style: ElevatedButton.styleFrom(
                   // backgroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 32.0),
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 16.0, horizontal: 32.0),
                   textStyle: const TextStyle(
                     fontSize: 18,
                     // fontWeight: FontWeight.bold,
@@ -225,8 +136,8 @@ class _WalletScreenState extends State<WalletScreen> {
                   },
                   style: ElevatedButton.styleFrom(
                     // backgroundColor: Colors.grey,
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 12.0, horizontal: 32.0),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12.0, horizontal: 32.0),
                     textStyle: const TextStyle(
                       fontSize: 16,
                       // fontWeight: FontWeight.bold,
@@ -252,7 +163,10 @@ class CurrencyCard extends StatefulWidget {
   final Function onSelect;
 
   const CurrencyCard(
-      {super.key, required this.currency, required this.amount, required this.onSelect});
+      {super.key,
+      required this.currency,
+      required this.amount,
+      required this.onSelect});
 
   @override
   _CurrencyCardState createState() => _CurrencyCardState();

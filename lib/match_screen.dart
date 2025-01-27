@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:xchange_app/match_exchange.dart';
 
@@ -15,7 +16,7 @@ class _MatchScreenState extends State<MatchExchangeScreen> {
   List<MatchExchange> _matchExchanges = [];
 
   Future<void> _loadMatchExchanges() async {
-    var url = Uri.http("app01.karnetif.com", '/postAd/queryAll');
+    var url = Uri.http('192.168.0.20:3000', '/postAd/queryAll');
     var response = await http.get(url);
     final jsonData = jsonDecode(response.body);
     setState(() {

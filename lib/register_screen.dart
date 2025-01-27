@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:xchange_app/login_screen.dart';
@@ -7,7 +8,8 @@ import 'package:xchange_app/sql.dart';
 import 'package:http/http.dart' as http;
 import 'package:xchange_app/wallet_screen.dart';
 import 'package:uuid/uuid.dart';
-
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -23,17 +25,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _password = TextEditingController();
   final TextEditingController _email = TextEditingController();
 
-  Future register() async {
+  String generateRandomTronAddress() {
+    final random = Random.secure();
+    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-    var url = Uri.http("app01.karnetif.com", '/register');
-    var response = await http.post(url, headers: {
-      'Content-Type': 'application/json',
-    }, body: jsonEncode({
-      "username": _username.text,
-      "email": _email.text,
-      "password": _password.text,
-      "walletId": uuid.v1()
-    }));
+    // Start with TK
+    String result = 'TR';
+
+    // Generate 32 random characters
+    for (var i = 0; i < 32; i++) {
+      result += chars[random.nextInt(chars.length)];
+    }
+
+    return result;
+  }
+
+  Future register() async {
+    var url = Uri.http('192.168.0.20:3000', '/register');
+    var response = await http.post(url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          "username": _username.text,
+          "email": _email.text,
+          "password": _password.text,
+          "walletId": generateRandomTronAddress(),
+          "fcmToken": await FirebaseMessaging.instance.getToken(),
+        }));
     Map<String, dynamic> data = json.decode(response.body);
 
     if (data["message"] == "Failed to create user") {
@@ -50,7 +69,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         msg: 'Registration Successful',
         toastLength: Toast.LENGTH_SHORT,
       );
-      Navigator.push(context,
+      Navigator.push(
+        context,
         MaterialPageRoute(
           builder: (context) => const LoginScreen(),
         ),

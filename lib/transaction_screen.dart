@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
 import 'package:xchange_app/cash_checkout_screen.dart';
+import 'package:xchange_app/login_screen.dart';
+import 'package:xchange_app/login_state.dart';
 import 'dart:convert';
+import 'package:intl/intl.dart';
 
 import 'package:xchange_app/match_exchange.dart';
+import 'package:xchange_app/transaction_model.dart';
 
 class TransactionScreen extends StatefulWidget {
   const TransactionScreen({super.key});
@@ -13,128 +19,172 @@ class TransactionScreen extends StatefulWidget {
 }
 
 class _TransactionScreenState extends State<TransactionScreen> {
-  List<MatchExchange> _matchExchanges = [];
-
-  Future<void> _loadMatchExchanges() async {
-    var url = Uri.http("app01.karnetif.com", '/postAd/queryAll');
-    var response = await http.get(url);
-    final jsonData = jsonDecode(response.body);
-    setState(() {
-      _matchExchanges = jsonData
-          .map<MatchExchange>((data) => MatchExchange.fromJson(data))
-          .toList();
-    });
-  }
+  List<Transaction> _transaction = [];
+  String? walletId;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() async {
+    super.didChangeDependencies();
+    final userData = await LoginState.getUserData();
+
+    setState(() {
+      walletId = userData?['walletId'];
+    });
     _loadMatchExchanges();
+  }
+
+  String formatSqlDate(String sqlDate) {
+    // Parse the SQL date string into a DateTime object
+    DateTime parsedDate = DateTime.parse(sqlDate);
+
+    // Format the date in a human-readable format (e.g., "Jan 16, 2025")
+    String formattedDate = DateFormat('MMM dd, yyyy').format(parsedDate);
+
+    return formattedDate;
+  }
+
+  Future<void> _loadMatchExchanges() async {
+    var url = Uri.http('192.168.0.20:3000', '/transaction/query');
+    var response = await http.post(url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({"walletId": walletId}));
+    final jsonData = jsonDecode(response.body);
+    setState(() {
+      _transaction = jsonData
+          .map<Transaction>((data) => Transaction.fromJson(data))
+          .toList();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Post Ad'),
+        title: const Text('Transaction'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           // Use Column to stack the text and ListView
           children: [
-            const Text(
-              'Swipe left to receive and right to pay',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color:
-                    Colors.black54, // Optional: Change the color to your liking
-              ),
-            ),
-            const SizedBox(
-                height: 20), // Add some space between the text and the ListView
             Expanded(
               // Use Expanded to allow ListView to take the remaining space
-              child: _matchExchanges.isEmpty
+              child: _transaction.isEmpty
                   ? const Center(child: CircularProgressIndicator())
                   : ListView.builder(
-                      itemCount: _matchExchanges.length,
+                      itemCount: _transaction.length,
                       itemBuilder: (context, index) {
-                        return Dismissible(
-                          key: Key(_matchExchanges[index].id), // or any unique id
-                          direction: DismissDirection.horizontal,
-                          onDismissed: (direction) {
-                            MatchExchange selectedExchange = _matchExchanges[index]; // Get the selected exchange
-                            
-                            String role;
-                            if (direction == DismissDirection.startToEnd) {
-                              role = "PAYER"; // Swiped right
-                            } else {
-                              role = "RECEIVER"; // Swiped left
-                            }
-
-                            // Create a map with the data you want to pass
-                            Map<String, dynamic> args = {
-                              'role': role,
-                              'id': (index+1).toString(),
-                              'fromCurrency': selectedExchange.fromCurrency,
-                              'toCurrency': selectedExchange.toCurrency,
-                              'fromAmount': selectedExchange.fromAmount,
-                              'toAmount': selectedExchange.toAmount,
-                              'fromDate': selectedExchange
-                                  .fromDate, // Assuming you have these properties
-                              'toDate': selectedExchange.toDate,
-                              'location': selectedExchange
-                                  .location, // Assuming you have a location property
-                            };
-
-                            // Navigate to CashCheckoutScreen with arguments
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const CashCheckoutScreen(),
-                                settings: RouteSettings(arguments: args),
-                              ),
-                            );
-                          },
-                          background: Container(
-                            color: Colors.red,
-                            alignment: Alignment.centerLeft,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Text(
-                                  ' PAY',
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                ),
-                                SizedBox(width: 8), // Space between text and icon
-                                Icon(Icons.arrow_left, color: Colors.white),
-                              ],
-                            ),
+                        final selectedMatch = _transaction[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 8,
+                              horizontal: 0), // Add spacing between cards
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          secondaryBackground: Container(
-                            color: Colors.green,
-                            alignment: Alignment.centerRight,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: const [
-                                Icon(Icons.arrow_right, color: Colors.white),
-                                SizedBox(width: 8), // Space between icon and text
-                                Text(
-                                  'RECEIVE ',
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          elevation:
+                              4, // Add slight shadow for better visual effect
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'From: ${selectedMatch.from}',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        Text(
+                                          'To: ${selectedMatch.to}',
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Icon(
+                                      Icons.currency_exchange,
+                                      size: 28,
+                                      color: Colors.blueAccent,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(
+                                    height: 16), // Add spacing between sections
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.attach_money,
+                                                size: 18, color: Colors.green),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              '${selectedMatch.fromAmount} ${selectedMatch.fromCurrency}',
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.arrow_forward,
+                                                size: 18, color: Colors.grey),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              '${selectedMatch.toAmount} ${selectedMatch.toCurrency}',
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.calendar_today,
+                                                size: 18, color: Colors.grey),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              formatSqlDate(selectedMatch.timestamp),
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ],
-                            ),
-                          ),
-                          child: Card(
-                            child: ListTile(
-                              title: Text(_matchExchanges[index].name),
-                              subtitle: Text(
-                                  'From: ${_matchExchanges[index].fromCurrency} to ${_matchExchanges[index].toCurrency}, Amount: ${_matchExchanges[index].fromAmount} to ${_matchExchanges[index].toAmount}, Due Date: ${_matchExchanges[index].toDate}'),
                             ),
                           ),
                         );

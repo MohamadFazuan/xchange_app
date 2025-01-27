@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:xchange_app/custom_drawer.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ExchangeScreen extends StatefulWidget {
   const ExchangeScreen({super.key});
@@ -11,7 +14,7 @@ class ExchangeScreen extends StatefulWidget {
 
 class _ExchangeScreenState extends State<ExchangeScreen> {
   final _formKey = GlobalKey<FormState>();
-  String? _fromCurrency= 'MYR';
+  String? _fromCurrency = 'MYR';
   String? _toCurrency = 'USD';
   String? _exchangeAmount = "";
   String? _amount = "";
@@ -27,7 +30,7 @@ class _ExchangeScreenState extends State<ExchangeScreen> {
   }
 
   Future<double> _getExchangeRate() async {
-    var url = Uri.http("app01.karnetif.com", '/exchange-rate');
+    var url = Uri.http('192.168.0.20:3000', '/exchange-rate');
     final response = await http.post(
       url,
       headers: {
@@ -67,117 +70,117 @@ class _ExchangeScreenState extends State<ExchangeScreen> {
       appBar: AppBar(
         title: const Text('Cash Exchange'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              // Text(
-              //   'Cash Exchange',
-              //   style: TextStyle(
-              //     fontSize: 30,
-              //     fontWeight: FontWeight.bold,
-              //   ),
-              // ),
-              const SizedBox(height: 30),
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'From Currency',
-                  border: OutlineInputBorder(),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                const SizedBox(height: 30),
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(
+                    labelText: 'From Currency',
+                    border: OutlineInputBorder(),
+                  ),
+                  value: _fromCurrency,
+                  hint: const Text('Select Currency'),
+                  onChanged: (value) => setState(() => _fromCurrency = value),
+                  items: currencies.map((currency) {
+                    return DropdownMenuItem<String>(
+                      value: currency,
+                      child: Text(currency),
+                    );
+                  }).toList(),
                 ),
-                value: _fromCurrency,
-                hint: const Text('Select Currency'),
-                onChanged: (value) => setState(() => _fromCurrency = value),
-                items: currencies.map((currency) {
-                  return DropdownMenuItem<String>(
-                    value: currency,
-                    child: Text(currency),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 20),
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'To Currency',
-                  border: OutlineInputBorder(),
-                ),
-                value: _toCurrency,
-                hint: const Text('Select Currency'),
-                onChanged: (value) {
-                  setState(() {
-                    _toCurrency = value;
-                    _updateExchangeAmount(); // Call _updateExchangeAmount here
-                  });
-                },
-                items: currencies.map((currency) {
-                  return DropdownMenuItem<String>(
-                    value: currency,
-                    child: Text(currency),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 20),
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: 'Amount',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Please enter an amount';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'Please enter a valid number';
-                  }
-                  return null;
-                },
-                onSaved: (value) => _amount = value!,
-                onChanged: (value) {
-                  setState(() => _amount = value);
-                  _updateExchangeAmount();
-                },
-              ),
-              const SizedBox(height: 5),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  const Text("Exchange Amount : "),
-                  Text(_toCurrency!),
-                  Text(_exchangeAmount!)
-                ],
-              ),
-              const SizedBox(height: 100),
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    _formKey.currentState!.save();
-                    // TODO: Implement exchange logic here
-                    Navigator.pushNamed(context, '/friends', arguments: {
-                      'fromCurrency': _fromCurrency,
-                      'toCurrency': _toCurrency,
-                      'fromAmount': _amount,
-                      'toAmount': _exchangeAmount,
+                const SizedBox(height: 20),
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(
+                    labelText: 'To Currency',
+                    border: OutlineInputBorder(),
+                  ),
+                  value: _toCurrency,
+                  hint: const Text('Select Currency'),
+                  onChanged: (value) {
+                    setState(() {
+                      _toCurrency = value;
+                      _updateExchangeAmount(); // Call _updateExchangeAmount here
                     });
-                  }
-                },
-                child: const Text('Find Nearby'),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  if (_exchangeAmount != null) {
-                    Navigator.pushNamed(context, '/post', arguments: {
-                      'fromCurrency': _fromCurrency,
-                      'toCurrency': _toCurrency,
-                      'fromAmount': _amount,
-                      'toAmount': _exchangeAmount,
-                    });
-                  }
-                },
-                child: const Text('Post Ad'),
-              ),
-            ],
+                  },
+                  items: currencies.map((currency) {
+                    return DropdownMenuItem<String>(
+                      value: currency,
+                      child: Text(currency),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  decoration: InputDecoration(
+                    labelText: 'Amount',
+                    border: const OutlineInputBorder(),
+                    suffixText: _fromCurrency, // Add currency suffix
+                    suffixStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value!.isEmpty) {
+                      return 'Please enter an amount';
+                    }
+                    if (double.tryParse(value) == null) {
+                      return 'Please enter a valid number';
+                    }
+                    return null;
+                  },
+                  onSaved: (value) => _amount = value!,
+                  onChanged: (value) {
+                    setState(() => _amount = value);
+                    _updateExchangeAmount();
+                  },
+                ),
+                const SizedBox(height: 5),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    const Text("Exchange Amount : "),
+                    Text(_toCurrency!),
+                    Text(_exchangeAmount!)
+                  ],
+                ),
+                const SizedBox(height: 100),
+                ElevatedButton(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      _formKey.currentState!.save();
+                      // TODO: Implement exchange logic here
+                      Navigator.pushNamed(context, '/postedAd', arguments: {
+                        'fromCurrency': _fromCurrency,
+                        'toCurrency': _toCurrency,
+                        'fromAmount': _amount,
+                        'toAmount': _exchangeAmount
+                      });
+                    }
+                  },
+                  child: const Text('Find Nearby'),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    if (_exchangeAmount != null) {
+                      Navigator.pushNamed(context, '/post', arguments: {
+                        'fromCurrency': _fromCurrency,
+                        'toCurrency': _toCurrency,
+                        'fromAmount': _amount,
+                        'toAmount': _exchangeAmount,
+                      });
+                    }
+                  },
+                  child: const Text('Post Ad'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

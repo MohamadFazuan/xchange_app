@@ -41,15 +41,22 @@ dependencies:
   mysql1: ^0.20.0
   sqflite: ^2.3.3+1
   sqflite_common_ffi: any
-  carousel_slider: ^4.2.1
+  carousel_slider: ^5.0.0
   qr_flutter: ^4.1.0
   shared_preferences: ^2.0.6
   uuid: ^4.5.1
   geolocator: ^13.0.1
-  intl: ^0.19.0
+  intl: ^0.20.1
   encrypt: ^5.0.3
   mobile_scanner: ^6.0.1
   lottie: ^3.2.0
+  flutter_dotenv: ^5.2.1
+  firebase_messaging: ^15.2.0
+  badges: ^3.1.2
+  firebase_core: ^3.10.0
+  crypto: ^3.0.0
+  firebase_analytics: ^11.4.1
+  flutter_local_notifications: ^18.0.1
 
 dev_dependencies:
   flutter_test:
@@ -60,7 +67,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -76,6 +83,9 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/thumb_up.json
+    - assets/profile_sample.png
+    - assets/header_bg.jpeg
+    - assets/no_ads.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

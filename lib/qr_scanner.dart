@@ -1,90 +1,98 @@
 import 'dart:convert'; // Add this import for JSON decoding
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:xchange_app/cash_checkout_nearby_screen.dart';
 import 'package:xchange_app/receipt_screen.dart';
+import 'package:http/http.dart' as http;
 
-class QRViewExample extends StatefulWidget {
-  const QRViewExample({super.key});
+class QRScanner extends StatefulWidget {
+  const QRScanner({super.key});
 
   @override
-  State<StatefulWidget> createState() => _QRViewExampleState();
+  State<StatefulWidget> createState() => _QRScannerState();
 }
 
-class _QRViewExampleState extends State<QRViewExample> {
+class _QRScannerState extends State<QRScanner> {
   Barcode? barcode; // Keep this as Barcode?
   MobileScannerController cameraController = MobileScannerController();
   late Map<String, dynamic> expectedArgs;
+  bool isVerified = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
     // Retrieve arguments passed to this page
-    expectedArgs =
+    final args =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    print("Args received: $expectedArgs");
-  }
 
-  Widget _buildBarcode(Barcode? barcodeVal) {
-    if (barcodeVal == null) {
-      return const Text(
-        'Scan something!',
-        overflow: TextOverflow.fade,
-        style: TextStyle(color: Colors.white),
-      );
-    }
-
-    return Text(
-      barcodeVal.displayValue ?? 'No value found',
-      overflow: TextOverflow.fade,
-      style: const TextStyle(color: Colors.white),
-    );
+    setState(() {
+      expectedArgs = args;
+    });
   }
 
   void handleBarcode(BarcodeCapture capture) {
-    if (capture.barcodes.isNotEmpty) {
-      final scannedData = capture.barcodes.first.displayValue;
-      if (scannedData != null) {
-        setState(() {
-          barcode = capture.barcodes.firstOrNull;
-        });
+    if (capture.barcodes.isEmpty) {
+      Fluttertoast.showToast(
+        msg: 'No barcode detected',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );
+      return;
+    }
 
-        // Verify the scanned data
-        _verifyScannedData(scannedData);
-      }
+    final barcode = capture.barcodes.first;
+    final scannedData = barcode.displayValue;
+
+    if (scannedData == null || scannedData.isEmpty) {
+      Fluttertoast.showToast(
+        msg: 'Invalid QR code data',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );
+      return;
+    }
+
+    setState(() {
+      this.barcode = barcode;
+    });
+
+    try {
+      _verifyScannedData(scannedData);
+    } catch (e) {
+      print('Error processing QR code: $e');
+      Fluttertoast.showToast(
+        msg: 'Error processing QR code',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );
     }
   }
 
-  void _verifyScannedData(String scannedData) {
+  void _verifyScannedData(String scannedData) async {
+    print(scannedData);
     try {
       final decodedData = jsonDecode(scannedData) as Map<String, dynamic>;
-
       final isValid = _checkFields(decodedData);
 
       if (isValid) {
-        // Show a loading animation and delay for 3 seconds before navigating
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                const SizedBox(height: 20),
-              ],
-            ),
-          ),
-        );
+        print(isValid);
 
-        Future.delayed(const Duration(seconds: 3), () {
-          Navigator.pop(context); // Close the loading dialog
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ReceiptScreen(receiptData: decodedData),
-            ),
-          );
+        // Return to the previous screen with arguments
+        Navigator.pushNamed(context, '/checkout', arguments: {
+          'isVerified': true,
+          'from': decodedData['from'],
+          'walletId': decodedData['walletId'],
+          'to': decodedData['to'],
+          'toWalletId': decodedData['toWalletId'],
+          'location': decodedData['location'],
+          'fromCurrency': decodedData['fromCurrency'],
+          'toCurrency': decodedData['toCurrency'],
+          'fromAmount': decodedData['fromAmount'],
+          'toAmount': decodedData['toAmount'],
+          'decodedData': decodedData,
+          'role': 'SENDER'
         });
       } else {
         showDialog(
@@ -103,18 +111,10 @@ class _QRViewExampleState extends State<QRViewExample> {
         );
       }
     } catch (e) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Invalid QR Data'),
-          content: Text('Error: $e'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
+      Fluttertoast.showToast(
+        msg: 'Error processing QR code: ${e.toString()}',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
       );
     }
   }
@@ -135,12 +135,6 @@ class _QRViewExampleState extends State<QRViewExample> {
         expectedArgs['toAmount'] == decodedData['toAmount'];
   }
 
-  // bool _areMapsEqual(Map<String, dynamic> map1, Map<String, dynamic> map2) {
-  //   // Check if the keys and values match exactly
-  //   return map1.length == map2.length &&
-  //       map1.entries.every((entry) => map2[entry.key] == entry.value);
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -151,19 +145,6 @@ class _QRViewExampleState extends State<QRViewExample> {
         MobileScanner(
           onDetect: handleBarcode,
         ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: Container(
-            alignment: Alignment.bottomCenter,
-            height: 100,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Expanded(child: Center(child: _buildBarcode(barcode)))
-              ],
-            ),
-          ),
-        )
       ]),
     );
   }

@@ -38,7 +38,7 @@ class _FriendScreenState extends State<FriendScreen> {
   // Fetch all users from the backend
   Future<void> _loadAllUsers() async {
     var url =
-        Uri.http('app01.karnetif.com', '/users'); // URL to fetch all users
+        Uri.http('192.168.0.20:3000', '/users'); // URL to fetch all users
     var response = await http.get(url);
 
     if (response.statusCode == 200) {
