@@ -23,7 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// Fetch the wallet ID using the username and password.
   Future<String?> getWalletId() async {
-    var url = Uri.http('192.168.0.20:3000', '/getWalletId');
+    var url = Uri.http('app01.karnetif.com', '/getWalletId');
     try {
       var response = await http.post(
         url,
@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> updateFcmToken(String? token) async {
-    var url = Uri.http('192.168.0.20:3000', '/update-fcm-token');
+    var url = Uri.http('app01.karnetif.com', '/update-fcm-token');
     var response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -64,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
   /// Handle the login process.
   Future<void> login() async {
     String? fcmToken = await FirebaseMessaging.instance.getToken();
-    var url = Uri.http('192.168.0.20:3000', '/login');
+    var url = Uri.http('app01.karnetif.com', '/login');
     try {
       var response = await http.post(
         url,

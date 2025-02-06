@@ -8,6 +8,7 @@ import 'package:xchange_app/add_card_screen.dart';
 import 'package:xchange_app/add_friend_screen.dart';
 import 'package:xchange_app/cash_checkout_screen.dart';
 import 'package:xchange_app/cash_checkout_nearby_screen.dart';
+import 'package:xchange_app/launch_screen.dart';
 import 'package:xchange_app/login_state.dart';
 import 'package:xchange_app/change_password_screen.dart';
 import 'package:xchange_app/exchange_screen.dart';
@@ -15,6 +16,7 @@ import 'package:xchange_app/login_screen.dart';
 import 'package:xchange_app/match_screen.dart';
 import 'package:xchange_app/notification_screen.dart';
 import 'package:xchange_app/notification_state.dart';
+import 'package:xchange_app/post_drawer_screen.dart';
 import 'package:xchange_app/post_screen.dart';
 import 'package:xchange_app/posted_ad.dart';
 import 'package:xchange_app/qr_code_content.dart';
@@ -53,9 +55,10 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      initialRoute: isLoggedIn ? '/wallet' : '/login',
+      initialRoute: isLoggedIn ? '/wallet' : '/',
       debugShowCheckedModeBanner: false,
       routes: {
+        '/': (context) => LaunchScreen(),
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/exchange': (context) => const ExchangeScreen(),
@@ -70,6 +73,7 @@ class MyApp extends StatelessWidget {
         '/wallet': (context) => const WalletScreen(),
         '/transaction': (context) => const TransactionScreen(),
         '/post': (context) => const PostAdScreen(),
+        '/postDrawer': (context) => const PostDrawerScreen(),
         '/checkout': (context) => const CashCheckoutScreen(),
         '/checkout/nearby': (context) => const CashCheckoutNearbyScreen(),
         '/match': (context) => const MatchExchangeScreen(),

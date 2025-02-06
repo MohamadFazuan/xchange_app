@@ -79,7 +79,7 @@ class _CashCheckoutScreenState extends State<CashCheckoutScreen> {
 
     try {
       // Add transaction
-      var transactionUrl = Uri.http('192.168.0.20:3000', '/transaction/add');
+      var transactionUrl = Uri.http('app01.karnetif.com', '/transaction/add');
       var transactionResponse = await http.post(
         transactionUrl,
         headers: {
@@ -94,11 +94,10 @@ class _CashCheckoutScreenState extends State<CashCheckoutScreen> {
           "toAmount": data['toAmount'],
         }),
       );
-      print(transactionResponse.statusCode);
       if (transactionResponse.statusCode == 201) {
         // Delete post after successful transaction
         var deleteUrl = Uri.http(
-            '192.168.0.20:3000', '/postAd/delete/${expectedArgs['id']}');
+            'app01.karnetif.com', '/postAd/delete');
         var deleteResponse = await http.post(
           deleteUrl,
           headers: {

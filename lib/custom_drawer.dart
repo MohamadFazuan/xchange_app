@@ -3,7 +3,7 @@ import 'package:xchange_app/login_state.dart';
 import 'package:badges/badges.dart' as badges;
 import 'package:xchange_app/notification_state.dart';
 
-class CustomScaffold extends StatelessWidget {
+class CustomScaffold extends StatefulWidget {
   final Widget body;
   final String? appBarTitle;
   final String? profileImageUrl;
@@ -17,6 +17,13 @@ class CustomScaffold extends StatelessWidget {
     this.profileImageUrl,
     this.appBar,
   });
+
+  @override
+  State<CustomScaffold> createState() => _CustomScaffoldState();
+}
+
+class _CustomScaffoldState extends State<CustomScaffold> {
+  bool hasUnreadNotifications = false;
 
   Future<Map<String, dynamic>> fetchUserData() async {
     _checkNotifications();
@@ -52,9 +59,9 @@ class CustomScaffold extends StatelessWidget {
         final userId = userData['walletId'] ?? 'Unknown';
 
         return Scaffold(
-          appBar: appBarTitle != null
+          appBar: widget.appBarTitle != null
               ? AppBar(
-                  title: Text(appBarTitle!),
+                  title: Text(widget.appBarTitle!),
                   actions: [
                     IconButton(
                       icon: badges.Badge(
@@ -76,7 +83,7 @@ class CustomScaffold extends StatelessWidget {
                 )
               : null,
           drawer: _buildDrawer(context, userName, userId),
-          body: body,
+          body: widget.body,
         );
       },
     );
@@ -105,8 +112,8 @@ class CustomScaffold extends StatelessWidget {
                     CircleAvatar(
                       radius: 35,
                       backgroundImage:
-                          profileImageUrl != null && profileImageUrl!.isNotEmpty
-                              ? NetworkImage(profileImageUrl!)
+                          widget.profileImageUrl != null && widget.profileImageUrl!.isNotEmpty
+                              ? NetworkImage(widget.profileImageUrl!)
                               : const AssetImage('assets/profile_sample.png')
                                   as ImageProvider,
                       backgroundColor: Colors.white,
@@ -161,6 +168,14 @@ class CustomScaffold extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.pushNamed(context, '/transaction');
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.list,
+                  text: 'Post',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/postDrawer');
                   },
                 ),
                 _buildDrawerItem(

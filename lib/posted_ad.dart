@@ -58,7 +58,7 @@ class _TransactionScreenState extends State<PostedAd> {
         throw Exception("Invalid amount provided");
       }
 
-      var url = Uri.http('192.168.0.20:3000', '/postAd/queryByExchange');
+      var url = Uri.http('app01.karnetif.com', '/postAd/queryByExchange');
       var response = await http.post(
         url,
         headers: {

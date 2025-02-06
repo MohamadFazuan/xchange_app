@@ -20,7 +20,7 @@ class TransactionScreen extends StatefulWidget {
 
 class _TransactionScreenState extends State<TransactionScreen> {
   List<Transaction> _transaction = [];
-  String? walletId;
+  String? name;
 
   @override
   void didChangeDependencies() async {
@@ -28,7 +28,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
     final userData = await LoginState.getUserData();
 
     setState(() {
-      walletId = userData?['walletId'];
+      name = userData?['name'];
     });
     _loadMatchExchanges();
   }
@@ -44,17 +44,22 @@ class _TransactionScreenState extends State<TransactionScreen> {
   }
 
   Future<void> _loadMatchExchanges() async {
-    var url = Uri.http('192.168.0.20:3000', '/transaction/query');
+    var url = Uri.http('app01.karnetif.com', '/transaction/query');
     var response = await http.post(url,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({"walletId": walletId}));
-    final jsonData = jsonDecode(response.body);
+        body: jsonEncode({"name": name}));
+    final dynamic jsonData = jsonDecode(response.body);
+    print(jsonData);
     setState(() {
-      _transaction = jsonData
-          .map<Transaction>((data) => Transaction.fromJson(data))
-          .toList();
+      if (jsonData is List) {
+          setState(() {
+            _transaction = jsonData.map<Transaction>((data) => Transaction.fromJson(data)).toList();
+          });
+        } else {
+          print('Invalid response format');
+        }
     });
   }
 
@@ -109,7 +114,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                         Text(
                                           'To: ${selectedMatch.to}',
                                           style: const TextStyle(
-                                            fontSize: 11,
+                                            fontSize: 14,
                                             color: Colors.grey,
                                           ),
                                         ),
@@ -172,7 +177,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                                 size: 18, color: Colors.grey),
                                             const SizedBox(width: 8),
                                             Text(
-                                              formatSqlDate(selectedMatch.timestamp),
+                                              formatSqlDate(
+                                                  selectedMatch.timestamp),
                                               style: const TextStyle(
                                                 fontSize: 12,
                                                 color: Colors.grey,

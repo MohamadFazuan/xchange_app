@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:xchange_app/custom_drawer.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:xchange_app/login_state.dart';
+import 'package:currency_picker/currency_picker.dart';
 
 class ExchangeScreen extends StatefulWidget {
   const ExchangeScreen({super.key});
@@ -23,14 +25,10 @@ class _ExchangeScreenState extends State<ExchangeScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // final args =
-    //     ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    // _fromCurrency = args['currency'];
-    // _amount = args['amount'];
   }
 
   Future<double> _getExchangeRate() async {
-    var url = Uri.http('192.168.0.20:3000', '/exchange-rate');
+    var url = Uri.http('app01.karnetif.com', '/exchange-rate');
     final response = await http.post(
       url,
       headers: {
@@ -53,9 +51,6 @@ class _ExchangeScreenState extends State<ExchangeScreen> {
     if (_amount != null && _fromCurrency != null && _toCurrency != null) {
       final exchangeRate = await _getExchangeRate();
       double amount = double.parse(_amount!.replaceAll(RegExp(r'[^\d\.]'), ''));
-      if (amount == 0) {
-        amount = 1.0; // set default value to 1.0 if amount is 0
-      }
       final exchangeAmount = amount * exchangeRate;
       setState(() {
         _exchangeAmount = exchangeAmount.toStringAsFixed(2);
@@ -78,41 +73,52 @@ class _ExchangeScreenState extends State<ExchangeScreen> {
             child: Column(
               children: [
                 const SizedBox(height: 30),
-                DropdownButtonFormField<String>(
+                TextFormField(
+                  controller: TextEditingController(text: _fromCurrency),
                   decoration: const InputDecoration(
                     labelText: 'From Currency',
                     border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.arrow_drop_down),
                   ),
-                  value: _fromCurrency,
-                  hint: const Text('Select Currency'),
-                  onChanged: (value) => setState(() => _fromCurrency = value),
-                  items: currencies.map((currency) {
-                    return DropdownMenuItem<String>(
-                      value: currency,
-                      child: Text(currency),
+                  readOnly: true,
+                  onTap: () {
+                    showCurrencyPicker(
+                      context: context,
+                      showFlag: true,
+                      showCurrencyName: true,
+                      showCurrencyCode: true,
+                      onSelect: (Currency currency) {
+                        setState(() {
+                          _fromCurrency = currency.code;
+                          _updateExchangeAmount();
+                        });
+                      },
                     );
-                  }).toList(),
+                  },
                 ),
                 const SizedBox(height: 20),
-                DropdownButtonFormField<String>(
+                TextFormField(
+                  controller: TextEditingController(text: _toCurrency),
                   decoration: const InputDecoration(
                     labelText: 'To Currency',
                     border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.arrow_drop_down),
                   ),
-                  value: _toCurrency,
-                  hint: const Text('Select Currency'),
-                  onChanged: (value) {
-                    setState(() {
-                      _toCurrency = value;
-                      _updateExchangeAmount(); // Call _updateExchangeAmount here
-                    });
-                  },
-                  items: currencies.map((currency) {
-                    return DropdownMenuItem<String>(
-                      value: currency,
-                      child: Text(currency),
+                  readOnly: true,
+                  onTap: () {
+                    showCurrencyPicker(
+                      context: context,
+                      showFlag: true,
+                      showCurrencyName: true,
+                      showCurrencyCode: true,
+                      onSelect: (Currency currency) {
+                        setState(() {
+                          _toCurrency = currency.code;
+                          _updateExchangeAmount();
+                        });
+                      },
                     );
-                  }).toList(),
+                  },
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
@@ -167,13 +173,22 @@ class _ExchangeScreenState extends State<ExchangeScreen> {
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (_exchangeAmount != null) {
+                      var user = await LoginState.getUserData();
+
                       Navigator.pushNamed(context, '/post', arguments: {
+                        'isEdit': false,
+                        'role': "RECEIVER",
+                        'id': null,
                         'fromCurrency': _fromCurrency,
                         'toCurrency': _toCurrency,
                         'fromAmount': _amount,
                         'toAmount': _exchangeAmount,
+                        'fromDate': "",
+                        'toDate': "",
+                        'name': user?['name'],
+                        'walletId': user?['walletId'],
                       });
                     }
                   },

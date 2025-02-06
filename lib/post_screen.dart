@@ -28,6 +28,9 @@ class _PostAdScreenState extends State<PostAdScreen> {
   final TextEditingController fromDate = TextEditingController();
   final TextEditingController toDate = TextEditingController();
   final TextEditingController location = TextEditingController();
+  String? _exchangeAmount, _amount;
+  int? id;
+  bool isEdit = false;
 
   @override
   Future<void> didChangeDependencies() async {
@@ -36,12 +39,20 @@ class _PostAdScreenState extends State<PostAdScreen> {
     final userData = await LoginState.getUserData();
     final args =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    fromCurrency.text = args['fromCurrency'];
-    toCurrency.text = args['toCurrency'];
-    fromAmount.text = args['fromAmount'];
-    toAmount.text = args['toAmount'];
-    name.text = userData!['name'];
-    walletId.text = userData['walletId'];
+
+    setState(() {
+      isEdit = args['isEdit'];
+      id = args['id'];
+      fromCurrency.text = args['fromCurrency'];
+      toCurrency.text = args['toCurrency'];
+      fromAmount.text = args['fromAmount'];
+      toAmount.text = args['toAmount'];
+      name.text = userData!['name'];
+      walletId.text = userData['walletId'];
+      fromDate.text = userData['fromDate'];
+      toDate.text = userData['toDate'];
+    });
+    _updateExchangeAmount();
   }
 
   Future postAd(
@@ -58,7 +69,7 @@ class _PostAdScreenState extends State<PostAdScreen> {
       String taxCharges,
       String serviceFee,
       String total) async {
-    var url = Uri.http('192.168.0.20:3000', '/postAd');
+    var url = Uri.http('app01.karnetif.com', '/postAd/add');
     var response = await http.post(url,
         headers: {
           'Content-Type': 'application/json',
@@ -101,6 +112,102 @@ class _PostAdScreenState extends State<PostAdScreen> {
         builder: (context) => const WalletScreen(),
       ),
     );
+  }
+
+  Future updateAd(
+      String id,
+      String fromCurrency,
+      String fromAmount,
+      String toCurrency,
+      String toAmount,
+      String name,
+      String walletId,
+      String fromDate,
+      String toDate,
+      String location,
+      String exchangePayment,
+      String taxCharges,
+      String serviceFee,
+      String total) async {
+    var url = Uri.http('app01.karnetif.com', '/postAd/updatePost');
+    var response = await http.post(url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          "id": id,
+          "fromCurrency": fromCurrency,
+          "toCurrency": toCurrency,
+          "fromAmount": fromAmount,
+          "toAmount": toAmount,
+          "name": name,
+          "walletId": walletId,
+          "fromDate": fromDate,
+          "toDate": toDate,
+          "location": location,
+          "exchangePayment": exchangePayment,
+          "taxCharges": taxCharges,
+          "serviceFee": serviceFee,
+          "total": total
+        }));
+
+    if (response.statusCode == 201) {
+      Fluttertoast.showToast(
+        backgroundColor: Colors.green,
+        textColor: Colors.white,
+        msg: 'Posted',
+        toastLength: Toast.LENGTH_SHORT,
+      );
+    } else {
+      Fluttertoast.showToast(
+        backgroundColor: Colors.orange,
+        textColor: Colors.white,
+        msg: 'Failed to post!',
+        toastLength: Toast.LENGTH_SHORT,
+      );
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const WalletScreen(),
+      ),
+    );
+  }
+
+  Future<double> _getExchangeRate() async {
+    var url = Uri.http('app01.karnetif.com', '/exchange-rate');
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'fromCurrency': fromCurrency.text,
+        'toCurrency': toCurrency.text,
+      }),
+    );
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      return jsonData['exchangeRate'];
+    } else {
+      throw Exception('Failed to load exchange rate');
+    }
+  }
+
+  void _updateExchangeAmount() async {
+    if (fromAmount.text != null && fromCurrency != null && toCurrency != null) {
+      final exchangeRate = await _getExchangeRate();
+      double amount =
+          double.parse(fromAmount.text.replaceAll(RegExp(r'[^\d\.]'), ''));
+      if (amount == 0) {
+        amount = 1.0; // set default value to 1.0 if amount is 0
+      }
+      final exchangeAmount = amount * exchangeRate;
+      setState(() {
+        toAmount.text = exchangeAmount.toStringAsFixed(2);
+        fromAmount.text = amount.toString();
+      });
+    }
   }
 
   @override
@@ -156,8 +263,15 @@ class _PostAdScreenState extends State<PostAdScreen> {
                           readOnly: true,
                           decoration: const InputDecoration(
                             border: OutlineInputBorder(),
+                            labelText: 'Amount',
                           ),
-                          controller: toAmount,
+                          controller:
+                              toAmount, // Use your TextEditingController
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) {
+                            setState(() => fromAmount.text = value);
+                            _updateExchangeAmount();
+                          },
                         ),
                       ),
                     ],
@@ -185,12 +299,17 @@ class _PostAdScreenState extends State<PostAdScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: TextField(
-                          readOnly: true,
+                          readOnly: false,
                           decoration: const InputDecoration(
-                            labelText: "",
+                            labelText: "Amount",
                             border: OutlineInputBorder(),
                           ),
                           controller: fromAmount,
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) {
+                            setState(() => toAmount.text = value);
+                            _updateExchangeAmount();
+                          },
                         ),
                       ),
                     ],
@@ -242,12 +361,18 @@ class _PostAdScreenState extends State<PostAdScreen> {
                                   }
                                 },
                                 child: AbsorbPointer(
-                                  child: TextField(
+                                  child: TextFormField(
                                     controller: fromDate,
                                     decoration: const InputDecoration(
                                       labelText: "Date From",
                                       border: OutlineInputBorder(),
                                     ),
+                                    validator: (value) {
+                                      if (value!.isEmpty) {
+                                        return 'Please enter a date';
+                                      }
+                                      return null;
+                                    },
                                   ),
                                 ),
                               ),
@@ -255,12 +380,18 @@ class _PostAdScreenState extends State<PostAdScreen> {
                             const SizedBox(width: 10),
                             Expanded(
                               child: AbsorbPointer(
-                                child: TextField(
+                                child: TextFormField(
                                   controller: toDate,
                                   decoration: const InputDecoration(
                                     labelText: "Date To",
                                     border: OutlineInputBorder(),
                                   ),
+                                  validator: (value) {
+                                    if (value!.isEmpty) {
+                                      return 'Please enter a date';
+                                    }
+                                    return null;
+                                  },
                                 ),
                               ),
                             ),
@@ -275,13 +406,19 @@ class _PostAdScreenState extends State<PostAdScreen> {
                             Expanded(
                               child: Stack(
                                 children: [
-                                  TextField(
+                                  TextFormField(
                                     readOnly: true,
                                     decoration: const InputDecoration(
                                       labelText: "Location",
                                       border: OutlineInputBorder(),
                                     ),
                                     controller: location,
+                                    validator: (value) {
+                                      if (value!.isEmpty) {
+                                        return 'Please enter location';
+                                      }
+                                      return null;
+                                    },
                                   ),
                                   Positioned(
                                       right: 0,
@@ -393,20 +530,40 @@ class _PostAdScreenState extends State<PostAdScreen> {
                             _formKey.currentState!.save();
                             // TODO: Implement post logic here
                             try {
-                              postAd(
-                                  fromCurrency.text,
-                                  fromAmount.text,
-                                  toCurrency.text,
-                                  toAmount.text,
-                                  name.text,
-                                  walletId.text,
-                                  fromDate.text,
-                                  toDate.text,
-                                  location.text,
-                                  toAmount.text,
-                                  "0",
-                                  "0",
-                                  toAmount.text);
+                              print(
+                                  '${id}, ${fromCurrency.text}, ${fromAmount.text}, ${toCurrency.text}, ${toAmount.text}, ${name.text}, ${walletId.text}, ${fromDate.text}, ${toDate.text}, ${location.text}, ${toAmount.text}, 0, 0, ${toAmount.text}');
+                              if (isEdit) {
+                                updateAd(
+                                    id.toString(),
+                                    fromCurrency.text,
+                                    fromAmount.text,
+                                    toCurrency.text,
+                                    toAmount.text,
+                                    name.text,
+                                    walletId.text,
+                                    fromDate.text,
+                                    toDate.text,
+                                    location.text,
+                                    toAmount.text,
+                                    "0",
+                                    "0",
+                                    toAmount.text);
+                              } else {
+                                postAd(
+                                    fromCurrency.text,
+                                    fromAmount.text,
+                                    toCurrency.text,
+                                    toAmount.text,
+                                    name.text,
+                                    walletId.text,
+                                    fromDate.text,
+                                    toDate.text,
+                                    location.text,
+                                    toAmount.text,
+                                    "0",
+                                    "0",
+                                    toAmount.text);
+                              }
                             } catch (e) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(

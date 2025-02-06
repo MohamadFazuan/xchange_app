@@ -35,44 +35,6 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     }
   }
 
-  // Future<void> addTransaction() async {
-  //   try {
-  //     var url = Uri.http('192.168.0.20:3000', '/transaction/add');
-  //     var response = await http.post(
-  //       url,
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: jsonEncode({
-  //         "from": from,
-  //         "to": to,
-  //         "fromCurrency": fromCurrency,
-  //         "toCurrency": toCurrency,
-  //         "fromAmount": fromAmount,
-  //         "toAmount": toAmount,
-  //       }),
-  //     );
-
-  //     if (response.statusCode == 201) {
-  //       final receiptData = jsonDecode(response.body);
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(content: Text('Transaction added successfully!')),
-  //       );
-  //       Navigator.pushReplacementNamed(context, '/wallet',
-  //           arguments: receiptData);
-  //     } else {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(
-  //             content: Text('Failed to add transaction: ${response.body}')),
-  //       );
-  //     }
-  //   } catch (e) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Error: $e')),
-  //     );
-  //   }
-  // }
-
   @override
   Widget build(BuildContext context) {
     final receiptData = widget.receiptData;

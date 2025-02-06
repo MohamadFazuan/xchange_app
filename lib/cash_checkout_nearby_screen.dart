@@ -38,7 +38,6 @@ class _CashCheckoutNearbyScreenState extends State<CashCheckoutNearbyScreen> {
     // Retrieve arguments passed from the previous screen
     final args =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-
     setState(() {
       id = args['id'];
       selectedUser = args['selectedUser'];
@@ -50,6 +49,7 @@ class _CashCheckoutNearbyScreenState extends State<CashCheckoutNearbyScreen> {
       toAmount.text = args['toAmount'] ?? '';
       isVerified = args['isVerified'] ?? false;
     });
+    _getExchangeRate();
   }
 
   @override
@@ -60,6 +60,37 @@ class _CashCheckoutNearbyScreenState extends State<CashCheckoutNearbyScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showInitDialog();
     });
+  }
+
+  Future<double> _getExchangeRate() async {
+    var url = Uri.http('app01.karnetif.com', '/exchange-rate');
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'fromCurrency': toCurrency.text,
+        'toCurrency': fromCurrency.text,
+      }),
+    );
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      setState(() {
+        try {
+          final amount = double.parse(toAmount.text);
+          final rate = jsonData['exchangeRate'].toDouble();
+          final result = amount * rate;
+          fromAmount.text = result.toStringAsFixed(2);
+        } catch (e) {
+          toAmount.text = '0.00';
+          print('Error calculating exchange rate: $e');
+        }
+      });
+      return jsonData['exchangeRate'];
+    } else {
+      throw Exception('Failed to load exchange rate');
+    }
   }
 
   void _showInitDialog() {
@@ -108,6 +139,7 @@ class _CashCheckoutNearbyScreenState extends State<CashCheckoutNearbyScreen> {
                 children: [
                   Expanded(
                     child: TextField(
+                      readOnly: true,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                       ),
@@ -138,6 +170,7 @@ class _CashCheckoutNearbyScreenState extends State<CashCheckoutNearbyScreen> {
                 children: [
                   Expanded(
                     child: TextField(
+                      readOnly: true,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                       ),
@@ -261,18 +294,18 @@ class _CashCheckoutNearbyScreenState extends State<CashCheckoutNearbyScreen> {
                     // Confirm Button
                     ElevatedButton.icon(
                       onPressed: () async {
-
                         var user = await LoginState.getUserData();
 
                         try {
                           // Sending confirmation message
                           var response = await http.post(
-                            Uri.parse('http://192.168.0.20:3000/send-message'),
+                            Uri.parse('http://app01.karnetif.com/send-message'),
                             headers: {'Content-Type': 'application/json'},
                             body: jsonEncode({
                               'to': selectedUser.toString(),
                               'title': "Let's Xchange!",
-                              'body': 'Hi I`m ${user?['name']}, \nCan we make currency exchange ${fromAmount.text} ${fromCurrency.text} with ${toAmount.text} ${toCurrency.text}',
+                              'body':
+                                  'Hi I`m ${user?['name']}, \nCan we make currency exchange ${fromAmount.text} ${fromCurrency.text} with ${toAmount.text} ${toCurrency.text}',
                               'dataQr': jsonEncode({
                                 'from': user?['name'],
                                 'walletId': user?['walletId'],
@@ -291,8 +324,8 @@ class _CashCheckoutNearbyScreenState extends State<CashCheckoutNearbyScreen> {
                             // Navigate to QR Scanner Screen
                             Navigator.pushNamed(context, '/qrSnap',
                                 arguments: {
-                                  'from': user?['name'],
-                                  'walletId': user?['walletId'],
+                                  'from': user!['name'],
+                                  'walletId': user['walletId'],
                                   'to': selectedUser.toString(),
                                   'toWalletId': toWalletId.toString(),
                                   'fromCurrency': fromCurrency.text,
