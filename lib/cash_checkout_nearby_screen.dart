@@ -27,7 +27,8 @@ class _CashCheckoutNearbyScreenState extends State<CashCheckoutNearbyScreen> {
   final TextEditingController fromDate = TextEditingController();
   final TextEditingController toDate = TextEditingController();
   final TextEditingController location = TextEditingController();
-  String? selectedUser, profileImageUrl, walletId, toWalletId, id;
+  String? selectedUser, profileImageUrl, walletId, toWalletId;
+  int? id;
   List<MatchExchange> _matchExchanges = [];
   bool isVerified = false;
   bool _isSending = false;
@@ -50,8 +51,6 @@ class _CashCheckoutNearbyScreenState extends State<CashCheckoutNearbyScreen> {
       toAmount.text = args['toAmount'] ?? '';
       isVerified = args['isVerified'] ?? false;
     });
-    print("selectedMatch");
-    print(id);
     _getExchangeRate();
   }
 
