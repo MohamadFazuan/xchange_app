@@ -42,6 +42,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Receipt"),
+        automaticallyImplyLeading: false,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

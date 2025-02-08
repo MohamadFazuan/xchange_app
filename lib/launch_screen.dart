@@ -36,16 +36,6 @@ class _LaunchScreenState extends State<LaunchScreen> with SingleTickerProviderSt
     return Scaffold(
       body: Stack(
         children: [
-          // Gradient Background
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blueAccent, Colors.purpleAccent],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-          ),
 
           // Centered Logo & Title
           Center(
@@ -57,16 +47,7 @@ class _LaunchScreenState extends State<LaunchScreen> with SingleTickerProviderSt
                   Icon(
                     Icons.currency_exchange,
                     size: 100,
-                    color: Colors.white,
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    "Xchange",
-                    style: GoogleFonts.poppins(
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                    color: Colors.black,
                   ),
                 ],
               ),

@@ -25,15 +25,24 @@ class CustomScaffold extends StatefulWidget {
 class _CustomScaffoldState extends State<CustomScaffold> {
   bool hasUnreadNotifications = false;
 
-  Future<Map<String, dynamic>> fetchUserData() async {
+  @override
+  void initState() {
+    super.initState();
     _checkNotifications();
+  }
+
+  Future<Map<String, dynamic>> fetchUserData() async {
     return await LoginState.getUserData() ?? {};
   }
 
   Future<void> _checkNotifications() async {
     final notifications = await NotificationState.getNotifications();
     if (notifications != null) {
-      hasUnreadNotifications = notifications.isNotEmpty;
+      final uniqueNotifications =
+          notifications.toSet().toList(); // Remove duplicates
+      setState(() {
+        hasUnreadNotifications = uniqueNotifications.isNotEmpty;
+      });
     }
   }
 
@@ -111,11 +120,11 @@ class _CustomScaffoldState extends State<CustomScaffold> {
                   children: [
                     CircleAvatar(
                       radius: 35,
-                      backgroundImage:
-                          widget.profileImageUrl != null && widget.profileImageUrl!.isNotEmpty
-                              ? NetworkImage(widget.profileImageUrl!)
-                              : const AssetImage('assets/profile_sample.png')
-                                  as ImageProvider,
+                      backgroundImage: widget.profileImageUrl != null &&
+                              widget.profileImageUrl!.isNotEmpty
+                          ? NetworkImage(widget.profileImageUrl!)
+                          : const AssetImage('assets/profile_sample.png')
+                              as ImageProvider,
                       backgroundColor: Colors.white,
                     ),
                     const SizedBox(width: 16),

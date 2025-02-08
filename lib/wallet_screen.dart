@@ -72,7 +72,7 @@ class _WalletScreenState extends State<WalletScreen> {
               ),
               const SizedBox(height: 5),
               const Text(
-                'SDIT MFY',
+                'Copyright MFY',
                 style: TextStyle(
                   fontSize: 12,
                 ),

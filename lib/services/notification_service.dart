@@ -11,10 +11,13 @@ class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   static final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
   StreamSubscription? _firebaseSubscription;
+  final _notificationController = StreamController<void>.broadcast();
   bool _isDisposed = false;
 
   factory NotificationService() => _instance;
   NotificationService._internal();
+
+  Stream<void> get onNotification => _notificationController.stream;
 
   Future<void> initialize() async {
     await Firebase.initializeApp();
@@ -125,8 +128,14 @@ class NotificationService {
     await NotificationState.saveNotification(notification);
   }
 
+  Future<void> checkNotifications() async {
+    final notifications = await NotificationState.getNotifications();
+    _notificationController.add(null);
+  }
+
   void dispose() {
     _isDisposed = true;
     _firebaseSubscription?.cancel();
+    _notificationController.close();
   }
 }

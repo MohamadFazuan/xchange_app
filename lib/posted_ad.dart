@@ -74,6 +74,7 @@ class _TransactionScreenState extends State<PostedAd> {
 
       if (response.statusCode == 201) {
         final jsonData = jsonDecode(response.body);
+        print(jsonData);
 
         // Get the logged-in user's name
         final userData = await LoginState.getUserData();
@@ -140,7 +141,6 @@ class _TransactionScreenState extends State<PostedAd> {
                         itemCount: _matchExchanges.length,
                         itemBuilder: (context, index) {
                           final selectedMatch = _matchExchanges[index];
-
                           return Card(
                             child: Card(
                               // margin: const EdgeInsets.symmetric(
@@ -227,6 +227,7 @@ class _TransactionScreenState extends State<PostedAd> {
                                 trailing: const Icon(Icons.arrow_forward_ios,
                                     size: 16, color: Colors.grey),
                                 onTap: () {
+                                  print(selectedMatch.id);
                                   Navigator.pushNamed(
                                       context, '/checkout/nearby',
                                       arguments: {

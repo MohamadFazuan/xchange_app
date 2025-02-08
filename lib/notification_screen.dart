@@ -83,7 +83,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
       final notification = notifications
           .firstWhere((n) => n['id'] == notificationId, orElse: () => {});
       if (notification.isNotEmpty) {
-        print(notification['data']);
         showModalBottomSheet(
           context: context,
           showDragHandle: true,
@@ -99,7 +98,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
         await NotificationState.removeNotification(notificationId);
         _loadSavedNotifications();
-
       }
     } else if (action == 'reject') {
       await NotificationState.removeNotification(notificationId);

@@ -137,45 +137,18 @@ class _QRScannerState extends State<QRScanner> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false, // Disables back button
-      onPopInvoked: (didPop) {
-        if (didPop) {
-          Navigator.pushReplacementNamed(context, '/checkout', arguments: {
-            'isVerified': false,
-            'from': expectedArgs['from'],
-            'walletId': expectedArgs['walletId'],
-            'to': expectedArgs['to'],
-            'toWalletId': expectedArgs['toWalletId'],
-            'location': expectedArgs['location'],
-            'fromCurrency': expectedArgs['fromCurrency'],
-            'toCurrency': expectedArgs['toCurrency'],
-            'fromAmount': expectedArgs['fromAmount'],
-            'toAmount': expectedArgs['toAmount'],
-            'role': 'SENDER'
-          });
-        }
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text("Snap Proof"),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-              Navigator.pushReplacementNamed(
-                  context, '/wallet'); // Navigate to initial page
-            },
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text("Snap Proof"),
+      ),
+      body: Stack(
+        children: [
+          MobileScanner(
+            onDetect: handleBarcode,
+            fit: BoxFit.contain,
           ),
-        ),
-        body: Stack(
-          children: [
-            MobileScanner(
-              onDetect: handleBarcode,
-              fit: BoxFit.contain,
-              controller: cameraController,
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }

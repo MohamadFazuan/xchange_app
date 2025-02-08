@@ -77,7 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       var data = json.decode(response.body);
 
-      if (data["message"] == "Failed to login") {
+      if (data["status"] == 201) {
         Fluttertoast.showToast(
           msg: 'Invalid username or password',
           backgroundColor: Colors.red,

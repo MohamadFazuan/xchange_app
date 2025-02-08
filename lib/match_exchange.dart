@@ -1,5 +1,5 @@
 class MatchExchange {
-  final String id;
+  final int id;
   final String role;
   final String name;
   final String walletId;
@@ -27,7 +27,7 @@ class MatchExchange {
 
   factory MatchExchange.fromJson(Map<String, dynamic> json) {
     return MatchExchange(
-      id: json['role'] ?? '',
+      id: json['id'] ?? '',
       role: json['role'] ?? '',
       name: json['name'] ?? '',
       walletId: json['walletId'] ?? '',
@@ -43,6 +43,7 @@ class MatchExchange {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'name': name,
       'walletId': walletId,
       'fromCurrency': fromCurrency,

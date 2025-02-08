@@ -74,9 +74,6 @@ class _CashCheckoutScreenState extends State<CashCheckoutScreen> {
   }
 
   Future<bool> _addTransaction(Map<String, dynamic> data) async {
-    print(" add Transaction data");
-    print(data);
-
     try {
       // Add transaction
       var transactionUrl = Uri.http('app01.karnetif.com', '/transaction/add');
@@ -124,9 +121,6 @@ class _CashCheckoutScreenState extends State<CashCheckoutScreen> {
         return false;
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
       return false;
     }
   }
@@ -380,7 +374,7 @@ class _CashCheckoutScreenState extends State<CashCheckoutScreen> {
                         try {
                           _addTransaction(expectedArgs);
                           // Navigate to Receipt Screen
-                          Navigator.pushNamed(context, '/receipt', arguments: {
+                          Navigator.pushReplacementNamed(context, '/receipt', arguments: {
                             'id': id,
                             'from': from.toString(),
                             'walletId': walletId,

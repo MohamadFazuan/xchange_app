@@ -30,6 +30,7 @@ class _CashCheckoutNearbyScreenState extends State<CashCheckoutNearbyScreen> {
   String? selectedUser, profileImageUrl, walletId, toWalletId, id;
   List<MatchExchange> _matchExchanges = [];
   bool isVerified = false;
+  bool _isSending = false;
 
   @override
   void didChangeDependencies() {
@@ -49,6 +50,8 @@ class _CashCheckoutNearbyScreenState extends State<CashCheckoutNearbyScreen> {
       toAmount.text = args['toAmount'] ?? '';
       isVerified = args['isVerified'] ?? false;
     });
+    print("selectedMatch");
+    print(id);
     _getExchangeRate();
   }
 
@@ -293,67 +296,78 @@ class _CashCheckoutNearbyScreenState extends State<CashCheckoutNearbyScreen> {
                   children: [
                     // Confirm Button
                     ElevatedButton.icon(
-                      onPressed: () async {
-                        var user = await LoginState.getUserData();
+                      onPressed: _isSending
+                          ? null
+                          : () async {
+                              // Disable button when sending
+                              setState(() {
+                                _isSending = true; // Prevent multiple requests
+                              });
 
-                        try {
-                          // Sending confirmation message
-                          var response = await http.post(
-                            Uri.parse('http://app01.karnetif.com/send-message'),
-                            headers: {'Content-Type': 'application/json'},
-                            body: jsonEncode({
-                              'to': selectedUser.toString(),
-                              'title': "Let's Xchange!",
-                              'body':
-                                  'Hi I`m ${user?['name']}, \nCan we make currency exchange ${fromAmount.text} ${fromCurrency.text} with ${toAmount.text} ${toCurrency.text}',
-                              'dataQr': jsonEncode({
-                                'from': user?['name'],
-                                'walletId': user?['walletId'],
-                                'to': selectedUser.toString(),
-                                'toWalletId': walletId.toString(),
-                                'fromCurrency': fromCurrency.text,
-                                'toCurrency': toCurrency.text,
-                                'fromAmount': fromAmount.text,
-                                'toAmount': toAmount.text,
-                                'location': location.text
-                              }),
-                            }),
-                          );
+                              var user = await LoginState.getUserData();
 
-                          if (response.statusCode == 200) {
-                            // Navigate to QR Scanner Screen
-                            Navigator.pushNamed(context, '/qrSnap',
-                                arguments: {
-                                  'from': user!['name'],
-                                  'walletId': user['walletId'],
-                                  'to': selectedUser.toString(),
-                                  'toWalletId': toWalletId.toString(),
-                                  'fromCurrency': fromCurrency.text,
-                                  'toCurrency': toCurrency.text,
-                                  'fromAmount': fromAmount.text,
-                                  'toAmount': toAmount.text,
-                                  'location': location.text
+                              try {
+                                var response = await http.post(
+                                  Uri.parse(
+                                      'http://app01.karnetif.com/send-message'),
+                                  headers: {'Content-Type': 'application/json'},
+                                  body: jsonEncode({
+                                    'to': selectedUser.toString(),
+                                    'title': "Let's Xchange!",
+                                    'body':
+                                        'Hi I`m ${user?['name']}, \nCan we make currency exchange ${fromAmount.text} ${fromCurrency.text} with ${toAmount.text} ${toCurrency.text}',
+                                    'dataQr': jsonEncode({
+                                      'from': user?['name'],
+                                      'walletId': user?['walletId'],
+                                      'to': selectedUser.toString(),
+                                      'toWalletId': walletId.toString(),
+                                      'fromCurrency': fromCurrency.text,
+                                      'toCurrency': toCurrency.text,
+                                      'fromAmount': fromAmount.text,
+                                      'toAmount': toAmount.text,
+                                      'location': location.text
+                                    }),
+                                  }),
+                                );
+
+                                if (response.statusCode == 200) {
+                                  Navigator.pushNamed(context, '/qrSnap',
+                                      arguments: {
+                                        'from': user!['name'],
+                                        'walletId': user['walletId'],
+                                        'to': selectedUser.toString(),
+                                        'toWalletId': toWalletId.toString(),
+                                        'fromCurrency': fromCurrency.text,
+                                        'toCurrency': toCurrency.text,
+                                        'fromAmount': fromAmount.text,
+                                        'toAmount': toAmount.text,
+                                        'location': location.text
+                                      });
+                                } else {
+                                  Fluttertoast.showToast(
+                                    msg:
+                                        "Failed to send confirmation. Please try again.",
+                                    toastLength: Toast.LENGTH_SHORT,
+                                    gravity: ToastGravity.BOTTOM,
+                                    backgroundColor: Colors.red,
+                                    textColor: Colors.white,
+                                  );
+                                }
+                              } catch (error) {
+                                Fluttertoast.showToast(
+                                  msg: "An error occurred: $error",
+                                  toastLength: Toast.LENGTH_SHORT,
+                                  gravity: ToastGravity.BOTTOM,
+                                  backgroundColor: Colors.red,
+                                  textColor: Colors.white,
+                                );
+                              } finally {
+                                setState(() {
+                                  _isSending =
+                                      false; // Re-enable button after request completes
                                 });
-                          } else {
-                            Fluttertoast.showToast(
-                              msg:
-                                  "Failed to send confirmation. Please try again.",
-                              toastLength: Toast.LENGTH_SHORT,
-                              gravity: ToastGravity.BOTTOM,
-                              backgroundColor: Colors.red,
-                              textColor: Colors.white,
-                            );
-                          }
-                        } catch (error) {
-                          Fluttertoast.showToast(
-                            msg: "An error occurred: $error",
-                            toastLength: Toast.LENGTH_SHORT,
-                            gravity: ToastGravity.BOTTOM,
-                            backgroundColor: Colors.red,
-                            textColor: Colors.white,
-                          );
-                        }
-                      },
+                              }
+                            },
                       icon: const Icon(Icons.check, size: 20),
                       label: const Text('Confirm',
                           style: TextStyle(color: Colors.white)),
@@ -361,8 +375,7 @@ class _CashCheckoutNearbyScreenState extends State<CashCheckoutNearbyScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 15),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
+                            borderRadius: BorderRadius.circular(30)),
                         backgroundColor: Colors.green,
                       ),
                     ),
