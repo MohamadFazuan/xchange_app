@@ -39,12 +39,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   await NotificationService().initialize();
-  
+
   runApp(const MyApp(isLoggedIn: false));
 }
 
 class MyApp extends StatelessWidget {
-
   final bool isLoggedIn;
   const MyApp({super.key, required this.isLoggedIn});
 
@@ -54,6 +53,15 @@ class MyApp extends StatelessWidget {
       title: 'Exchange App',
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            elevation: 3,
+            padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        ),
       ),
       initialRoute: isLoggedIn ? '/wallet' : '/',
       debugShowCheckedModeBanner: false,
@@ -78,7 +86,7 @@ class MyApp extends StatelessWidget {
         '/checkout/nearby': (context) => const CashCheckoutNearbyScreen(),
         '/match': (context) => const MatchExchangeScreen(),
         '/qrSnap': (context) => const QRScanner(),
-        '/postedAd' : (context) => const PostedAd(),
+        '/postedAd': (context) => const PostedAd(),
         '/receipt': (context) => const ReceiptScreen(receiptData: {}),
         '/notification': (context) => NotificationScreen(),
       },

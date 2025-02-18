@@ -53,8 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
         "newFcmToken": token,
       }),
     );
-
-    if (response.statusCode == 200) {
+    if (response.statusCode == 201) {
       print("FCM token updated successfully");
     } else {
       print("Failed to update FCM token");
@@ -88,7 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
         await LoginState.setLoggedIn(true);
         await LoginState.setUserData({
           'name': data["username"],
-          'walletId': data["walletId"],
+          'walletId': data["wallet_id"],
         });
         Fluttertoast.showToast(
           msg: 'Login Successful',

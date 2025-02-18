@@ -21,16 +21,27 @@ class TransactionScreen extends StatefulWidget {
 class _TransactionScreenState extends State<TransactionScreen> {
   List<Transaction> _transaction = [];
   String? name;
+  bool _isLoading = true; // Loading state
 
   @override
-  void didChangeDependencies() async {
-    super.didChangeDependencies();
-    final userData = await LoginState.getUserData();
+  void initState() {
+    super.initState();
+    _fetchUserAndTransactions();
+  }
 
-    setState(() {
-      name = userData?['name'];
-    });
-    _loadMatchExchanges();
+  Future<void> _fetchUserAndTransactions() async {
+    final userData = await LoginState.getUserData();
+    
+    if (userData != null) {
+      setState(() {
+        name = userData['name'];
+      });
+      await _loadMatchExchanges(); // Fetch transactions after name is set
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   String formatSqlDate(String sqlDate) {
@@ -51,11 +62,11 @@ class _TransactionScreenState extends State<TransactionScreen> {
         },
         body: jsonEncode({"name": name}));
     final dynamic jsonData = jsonDecode(response.body);
-    print(jsonData);
     setState(() {
       if (jsonData is List) {
           setState(() {
-            _transaction = jsonData.map<Transaction>((data) => Transaction.fromJson(data)).toList();
+            _transaction = jsonData.map<Transaction>((data) => Transaction.fromJson(data)).toList()..sort((a, b) => DateTime.parse(b.timestamp)
+                .compareTo(DateTime.parse(a.timestamp)));;
           });
         } else {
           print('Invalid response format');

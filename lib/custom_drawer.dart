@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:xchange_app/login_state.dart';
 import 'package:badges/badges.dart' as badges;
@@ -24,26 +26,37 @@ class CustomScaffold extends StatefulWidget {
 
 class _CustomScaffoldState extends State<CustomScaffold> {
   bool hasUnreadNotifications = false;
+  StreamSubscription<List<Map<String, dynamic>>>? _notificationSubscription;
 
   @override
   void initState() {
     super.initState();
     _checkNotifications();
+
+    // Listen for real-time notification changes
+    _notificationSubscription =
+        NotificationState.notificationStream.listen((notifications) {
+      setState(() {
+        hasUnreadNotifications = notifications.isNotEmpty;
+      });
+    });
+  }
+
+  Future<void> _checkNotifications() async {
+    final notifications = await NotificationState.getNotifications();
+    setState(() {
+      hasUnreadNotifications = notifications.isNotEmpty;
+    });
   }
 
   Future<Map<String, dynamic>> fetchUserData() async {
     return await LoginState.getUserData() ?? {};
   }
 
-  Future<void> _checkNotifications() async {
-    final notifications = await NotificationState.getNotifications();
-    if (notifications != null) {
-      final uniqueNotifications =
-          notifications.toSet().toList(); // Remove duplicates
-      setState(() {
-        hasUnreadNotifications = uniqueNotifications.isNotEmpty;
-      });
-    }
+  @override
+  void dispose() {
+    _notificationSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -75,14 +88,14 @@ class _CustomScaffoldState extends State<CustomScaffold> {
                     IconButton(
                       icon: badges.Badge(
                         showBadge: hasUnreadNotifications,
-                        badgeContent: Text(
+                        badgeContent: const Text(
                           "!",
                           style: TextStyle(color: Colors.white),
                         ),
-                        badgeStyle: badges.BadgeStyle(
+                        badgeStyle: const badges.BadgeStyle(
                           badgeColor: Colors.red,
                         ),
-                        child: Icon(Icons.notifications),
+                        child: const Icon(Icons.notifications),
                       ),
                       onPressed: () {
                         Navigator.pushNamed(context, '/notification');

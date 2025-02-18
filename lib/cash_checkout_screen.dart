@@ -2,11 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:xchange_app/login_state.dart';
 import 'package:http/http.dart' as http;
 import 'package:xchange_app/match_exchange.dart';
-import 'package:xchange_app/qr_code_content.dart';
+import 'package:xchange_app/user_display.dart';
 
 class CashCheckoutScreen extends StatefulWidget {
   const CashCheckoutScreen({super.key});
@@ -37,21 +36,26 @@ class _CashCheckoutScreenState extends State<CashCheckoutScreen> {
     // Retrieve arguments passed from the previous screen
     final args =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-        print("CashCheckoutScreen");
-    print(args);
+    print("CashCheckoutScreen");
 
     setState(() {
       from = args['from'];
-      walletId = args['walletId'];
       to = args['to'];
-      toWalletId = args['toWalletId'];
       location.text = args['location'];
       if (args['role'] == 'RECEIVER') {
+        from = args['from'];
+        walletId = args['walletId'];
+        to = args['to'];
+        toWalletId = args['toWalletId'];
         fromCurrency.text = args['fromCurrency'] ?? '';
         toCurrency.text = args['toCurrency'] ?? '';
         fromAmount.text = args['fromAmount'] ?? '';
         toAmount.text = args['toAmount'] ?? '';
-      } else {
+      } else if (args['role'] == 'SENDER') {
+        from = args['to'];
+        walletId = args['toWalletId'];
+        to = args['from'];
+        toWalletId = args['walletId'];
         fromCurrency.text = args['toCurrency'] ?? '';
         toCurrency.text = args['fromCurrency'] ?? '';
         fromAmount.text = args['toAmount'] ?? '';
@@ -83,6 +87,7 @@ class _CashCheckoutScreenState extends State<CashCheckoutScreen> {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
+          "postId": data[''],
           "from": data['from'],
           "to": data['to'],
           "fromCurrency": data['fromCurrency'],
@@ -93,8 +98,7 @@ class _CashCheckoutScreenState extends State<CashCheckoutScreen> {
       );
       if (transactionResponse.statusCode == 201) {
         // Delete post after successful transaction
-        var deleteUrl = Uri.http(
-            'app01.karnetif.com', '/postAd/delete');
+        var deleteUrl = Uri.http('app01.karnetif.com', '/postAd/delete');
         var deleteResponse = await http.post(
           deleteUrl,
           headers: {
@@ -152,284 +156,297 @@ class _CashCheckoutScreenState extends State<CashCheckoutScreen> {
       appBar: AppBar(
         title: const Text("Cash Checkout"),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
-              const Text(
-                "Currency Exchange",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 8),
-                        TextField(
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Currency',
-                          ),
-                          controller: fromCurrency,
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Amount',
-                          ),
-                          controller: fromAmount,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(
-                          Icons.currency_exchange,
-                          size: 30,
-                          color: Colors.blue,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 8),
-                        TextField(
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Currency',
-                          ),
-                          controller: toCurrency,
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Amount',
-                          ),
-                          controller: toAmount,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 30),
-              const Text(
-                "Details",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Profile Image
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundImage:
-                        profileImageUrl != null && profileImageUrl!.isNotEmpty
-                            ? NetworkImage(profileImageUrl!)
-                            : const AssetImage('assets/profile_sample.png')
-                                as ImageProvider,
-                    backgroundColor: Colors.white,
-                  ),
-                  const SizedBox(
-                      width: 16), // Add spacing between the image and text
-                  // User Info
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        from.toString(),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4), // Spacing between the texts
-                      Text(
-                        walletId!,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Profile Image
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundImage:
-                        profileImageUrl != null && profileImageUrl!.isNotEmpty
-                            ? NetworkImage(profileImageUrl!)
-                            : const AssetImage('assets/profile_sample.png')
-                                as ImageProvider,
-                    backgroundColor: Colors.white,
-                  ),
-                  const SizedBox(
-                      width: 16), // Add spacing between the image and text
-                  // User Info
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        to.toString(),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4), // Spacing between the texts
-                      Text(
-                        toWalletId!,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 30),
-              const Text(
-                "Exchange Payment",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text("Exchange Payment"),
-                  Text(fromAmount.text),
-                ],
-              ),
-              const SizedBox(height: 10),
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("Tax Charges"),
-                  Text("-"),
-                ],
-              ),
-              const SizedBox(height: 10),
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("Service Fee"),
-                  Text("-"),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Divider(),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text("TOTAL"),
-                  Text(fromAmount.text),
-                ],
-              ),
-              const SizedBox(height: 50),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Confirm Button
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        var user = await LoginState.getUserData();
+                    const SizedBox(height: 20),
+                    const Text(
+                      "Currency Exchange",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 8),
+                              TextField(
+                                decoration: const InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  labelText: 'Currency',
+                                ),
+                                controller: fromCurrency,
+                              ),
+                              const SizedBox(height: 8),
+                              TextField(
+                                decoration: const InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  labelText: 'Amount',
+                                ),
+                                controller: fromAmount,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(
+                                Icons.currency_exchange,
+                                size: 30,
+                                color: Colors.blue,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 8),
+                              TextField(
+                                decoration: const InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  labelText: 'Currency',
+                                ),
+                                controller: toCurrency,
+                              ),
+                              const SizedBox(height: 8),
+                              TextField(
+                                decoration: const InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  labelText: 'Amount',
+                                ),
+                                controller: toAmount,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 30),
+                    const Text(
+                      "Details",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Profile Image
+                        CircleAvatar(
+                          radius: 30,
+                          backgroundImage: profileImageUrl != null &&
+                                  profileImageUrl!.isNotEmpty
+                              ? NetworkImage(profileImageUrl!)
+                              : const AssetImage('assets/profile_sample.png')
+                                  as ImageProvider,
+                          backgroundColor: Colors.white,
+                        ),
+                        const SizedBox(
+                            width:
+                                16), // Add spacing between the image and text
+                        // User Info
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              from.toString(),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(
+                                height: 4), // Spacing between the texts
+                            Text(
+                              walletId!,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Profile Image
+                        CircleAvatar(
+                          radius: 30,
+                          backgroundImage: profileImageUrl != null &&
+                                  profileImageUrl!.isNotEmpty
+                              ? NetworkImage(profileImageUrl!)
+                              : const AssetImage('assets/profile_sample.png')
+                                  as ImageProvider,
+                          backgroundColor: Colors.white,
+                        ),
+                        const SizedBox(
+                            width:
+                                16), // Add spacing between the image and text
+                        // User Info
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              to.toString(),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(
+                                height: 4), // Spacing between the texts
+                            Text(
+                              toWalletId!,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 30),
+                    const Text(
+                      "Exchange Payment",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Exchange Payment"),
+                        Text(fromAmount.text),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text("Tax Charges"),
+                        Text("-"),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text("Service Fee"),
+                        Text("-"),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    const Divider(),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("TOTAL"),
+                        Text(fromAmount.text),
+                      ],
+                    ),
+                    const SizedBox(height: 50),
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          // Confirm Button
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              var user = await LoginState.getUserData();
 
-                        try {
-                          _addTransaction(expectedArgs);
-                          // Navigate to Receipt Screen
-                          Navigator.pushReplacementNamed(context, '/receipt', arguments: {
-                            'id': id,
-                            'from': from.toString(),
-                            'walletId': walletId,
-                            'to': to.toString(),
-                            'toWalletId': toWalletId.toString(),
-                            'fromCurrency': fromCurrency.text,
-                            'toCurrency': toCurrency.text,
-                            'fromAmount': fromAmount.text,
-                            'toAmount': toAmount.text,
-                          });
-                        } catch (error) {
-                          Fluttertoast.showToast(
-                            msg: "An error occurred: $error",
-                            toastLength: Toast.LENGTH_SHORT,
-                            gravity: ToastGravity.BOTTOM,
-                            backgroundColor: Colors.red,
-                            textColor: Colors.white,
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.check, size: 20),
-                      label: const Text('Pay',
-                          style: TextStyle(color: Colors.white)),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        backgroundColor: Colors.blue,
+                              try {
+                                _addTransaction(expectedArgs);
+                                // Navigate to Receipt Screen
+                                Navigator.pushReplacementNamed(
+                                    context, '/receipt',
+                                    arguments: {
+                                      'id': id,
+                                      'from': from.toString(),
+                                      'walletId': walletId,
+                                      'to': to.toString(),
+                                      'toWalletId': toWalletId.toString(),
+                                      'fromCurrency': fromCurrency.text,
+                                      'toCurrency': toCurrency.text,
+                                      'fromAmount': fromAmount.text,
+                                      'toAmount': toAmount.text,
+                                    });
+                              } catch (error) {
+                                Fluttertoast.showToast(
+                                  msg: "An error occurred: $error",
+                                  toastLength: Toast.LENGTH_SHORT,
+                                  gravity: ToastGravity.BOTTOM,
+                                  backgroundColor: Colors.red,
+                                  textColor: Colors.white,
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.check, size: 20),
+                            label: const Text('Pay',
+                                style: TextStyle(color: Colors.white)),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 15),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              backgroundColor: Colors.blue,
+                            ),
+                          ),
+                          // Cancel Button
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/wallet');
+                            },
+                            icon: const Icon(Icons.cancel, size: 20),
+                            label: const Text('Cancel',
+                                style: TextStyle(color: Colors.white)),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 15),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    // Cancel Button
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/wallet');
-                      },
-                      icon: const Icon(Icons.cancel, size: 20),
-                      label: const Text('Cancel',
-                          style: TextStyle(color: Colors.white)),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        backgroundColor: Colors.red,
-                      ),
-                    ),
+                    )
                   ],
                 ),
-              )
-            ],
+              ),
+            ),
           ),
-        ),
+          const UsernameDisplay(),
+        ],
       ),
     );
   }

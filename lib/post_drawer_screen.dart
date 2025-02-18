@@ -59,7 +59,8 @@ class _PostDrawerScreenState extends State<PostDrawerScreen> {
         final dynamic jsonData = jsonDecode(response.body);
         if (jsonData is List) {
           setState(() {
-            _post = jsonData.map<Post>((data) => Post.fromJson(data)).toList();
+            _post = jsonData.map<Post>((data) => Post.fromJson(data)).toList()..sort((a, b) => DateTime.parse(b.toDate)
+                  .compareTo(DateTime.parse(a.toDate)));
           });
         } else {
           print('Invalid response format');

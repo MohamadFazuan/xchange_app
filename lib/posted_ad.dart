@@ -8,6 +8,7 @@ import 'package:xchange_app/login_state.dart';
 import 'dart:convert';
 
 import 'package:xchange_app/match_exchange.dart';
+import 'package:xchange_app/user_display.dart';
 
 class PostedAd extends StatefulWidget {
   const PostedAd({super.key});
@@ -48,6 +49,34 @@ class _TransactionScreenState extends State<PostedAd> {
     return formattedDate;
   }
 
+  Future<void> lowestAmount(String? fromCurrency, String? toCurrency,
+      String? amount1, String? amount2) async {
+    // Check if currencies match
+    if (fromCurrency != toCurrency) {
+      print("Currencies do not match!");
+      return;
+    }
+
+    // Ensure amounts are not empty
+    if (amount1 != "" && amount2 != "") {
+      final double parsedDouble1 = double.tryParse(amount1.toString()) ?? 0.0;
+      final double parsedDouble2 = double.tryParse(amount2.toString()) ?? 0.0;
+
+      if (parsedDouble1 > 0 && parsedDouble2 > 0) {
+        setState(() {
+          fromAmount = parsedDouble1 >= parsedDouble2
+              ? amount2.toString()
+              : amount1.toString();
+        });
+        print("Lowest Amount: $fromAmount");
+      } else {
+        print("Invalid amount values");
+      }
+    } else {
+      print("Amounts cannot be empty");
+    }
+  }
+
   Future<void> _loadMatchExchanges() async {
     try {
       // Parse `toAmount` to an integer
@@ -74,7 +103,6 @@ class _TransactionScreenState extends State<PostedAd> {
 
       if (response.statusCode == 201) {
         final jsonData = jsonDecode(response.body);
-        print(jsonData);
 
         // Get the logged-in user's name
         final userData = await LoginState.getUserData();
@@ -105,150 +133,176 @@ class _TransactionScreenState extends State<PostedAd> {
       appBar: AppBar(
         title: const Text('Find Nearby'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          // Use Column to stack the text and ListView
-          children: [
-            Expanded(
-                // Use Expanded to allow ListView to take the remaining space
-                child: _matchExchanges.isEmpty
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Flexible(
-                            child: Column(
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                // Use Column to stack the text and ListView
+                children: [
+                  Expanded(
+                      // Use Expanded to allow ListView to take the remaining space
+                      child: _matchExchanges.isEmpty
+                          ? Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Image.asset('assets/no_ads.png', width: 200),
-                                const SizedBox(height: 16),
-                                const Text(
-                                  "No Ads Found",
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
+                                Flexible(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      Image.asset('assets/no_ads.png',
+                                          width: 200),
+                                      const SizedBox(height: 16),
+                                      const Text(
+                                        "No Ads Found",
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      )
+                                    ],
                                   ),
-                                  textAlign: TextAlign.center,
-                                )
+                                ),
                               ],
-                            ),
-                          ),
-                        ],
-                      )
-                    : ListView.builder(
-                        itemCount: _matchExchanges.length,
-                        itemBuilder: (context, index) {
-                          final selectedMatch = _matchExchanges[index];
-                          return Card(
-                            child: Card(
-                              // margin: const EdgeInsets.symmetric(
-                              //     vertical: 8, horizontal: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              // elevation: 4,
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.all(16),
-                                title: Column(
-                                  children: [
-                                    Text(
-                                      selectedMatch.name,
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
+                            )
+                          : ListView.builder(
+                              itemCount: _matchExchanges.length,
+                              itemBuilder: (context, index) {
+                                final selectedMatch = _matchExchanges[index];
+                                return Card(
+                                  child: Card(
+                                    // margin: const EdgeInsets.symmetric(
+                                    //     vertical: 8, horizontal: 16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    // elevation: 4,
+                                    child: ListTile(
+                                      contentPadding: const EdgeInsets.all(16),
+                                      title: Column(
+                                        children: [
+                                          Text(
+                                            selectedMatch.name,
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          Text(
+                                            selectedMatch.walletId,
+                                            style: const TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.grey),
+                                          ),
+                                        ],
                                       ),
+                                      subtitle: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const SizedBox(height: 16),
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.location_on,
+                                                  size: 16, color: Colors.grey),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'Location: ${selectedMatch.location}',
+                                                style: const TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.grey),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              const Icon(
+                                                  Icons.currency_exchange,
+                                                  size: 16,
+                                                  color: Colors.grey),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'Currency: ${selectedMatch.fromCurrency} → ${selectedMatch.toCurrency}',
+                                                style: const TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.grey),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.monetization_on,
+                                                  size: 16, color: Colors.grey),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'Amount: ${selectedMatch.fromAmount} ${selectedMatch.fromCurrency} → ${selectedMatch.toAmount} ${selectedMatch.toCurrency}',
+                                                style: const TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.grey),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.calendar_today,
+                                                  size: 16, color: Colors.grey),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'Due Date: ${formatSqlDate(selectedMatch.toDate)}',
+                                                style: const TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.grey),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      trailing: const Icon(
+                                          Icons.arrow_forward_ios,
+                                          size: 16,
+                                          color: Colors.grey),
+                                      onTap: () {
+                                        lowestAmount(
+                                            fromCurrency,
+                                            selectedMatch.toCurrency,
+                                            fromAmount,
+                                            selectedMatch.toAmount);
+                                        Navigator.pushNamed(
+                                            context, '/checkout/nearby',
+                                            arguments: {
+                                              'postId': selectedMatch.id,
+                                              'selectedUser':
+                                                  selectedMatch.name,
+                                              'walletId':
+                                                  selectedMatch.walletId,
+                                              'location':
+                                                  selectedMatch.location,
+                                              'fromCurrency': fromCurrency,
+                                              'toCurrency': toCurrency,
+                                              'fromAmount': fromAmount,
+                                              'toAmount':
+                                                  selectedMatch.toAmount,
+                                            });
+                                      },
                                     ),
-                                    Text(
-                                      selectedMatch.walletId,
-                                      style: const TextStyle(
-                                          fontSize: 14, color: Colors.grey),
-                                    ),
-                                  ],
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const SizedBox(height: 16),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.location_on,
-                                            size: 16, color: Colors.grey),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          'Location: ${selectedMatch.location}',
-                                          style: const TextStyle(
-                                              fontSize: 14, color: Colors.grey),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.currency_exchange,
-                                            size: 16, color: Colors.grey),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          'Currency: ${selectedMatch.fromCurrency} → ${selectedMatch.toCurrency}',
-                                          style: const TextStyle(
-                                              fontSize: 14, color: Colors.grey),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.monetization_on,
-                                            size: 16, color: Colors.grey),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          'Amount: ${selectedMatch.fromAmount} ${selectedMatch.fromCurrency} → ${selectedMatch.toAmount} ${selectedMatch.toCurrency}',
-                                          style: const TextStyle(
-                                              fontSize: 14, color: Colors.grey),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.calendar_today,
-                                            size: 16, color: Colors.grey),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          'Due Date: ${formatSqlDate(selectedMatch.toDate)}',
-                                          style: const TextStyle(
-                                              fontSize: 14, color: Colors.grey),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                trailing: const Icon(Icons.arrow_forward_ios,
-                                    size: 16, color: Colors.grey),
-                                onTap: () {
-                                  print(selectedMatch.id);
-                                  Navigator.pushNamed(
-                                      context, '/checkout/nearby',
-                                      arguments: {
-                                        'id': selectedMatch.id,
-                                        'selectedUser': selectedMatch.name,
-                                        'walletId': selectedMatch.walletId,
-                                        'location': selectedMatch.location,
-                                        'fromCurrency':
-                                            selectedMatch.fromCurrency,
-                                        'toCurrency': selectedMatch.toCurrency,
-                                        'fromAmount': selectedMatch.fromAmount,
-                                        'toAmount': selectedMatch.toAmount,
-                                      });
-                                },
-                              ),
-                            ),
-                          );
-                        },
-                      )),
-          ],
-        ),
+                                  ),
+                                );
+                              },
+                            )),
+                ],
+              ),
+            ),
+          ),
+          const UsernameDisplay(),
+        ],
       ),
     );
   }

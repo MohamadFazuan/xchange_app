@@ -30,7 +30,7 @@ class MatchExchange {
       id: json['id'] ?? '',
       role: json['role'] ?? '',
       name: json['name'] ?? '',
-      walletId: json['walletId'] ?? '',
+      walletId: json['wallet_id'] ?? '',
       fromCurrency: json['from_currency'] ?? '',
       toCurrency: json['to_currency'] ?? '',
       fromAmount: json['from_amount'] ?? '',

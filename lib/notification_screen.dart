@@ -85,13 +85,18 @@ class _NotificationScreenState extends State<NotificationScreen> {
       if (notification.isNotEmpty) {
         showModalBottomSheet(
           context: context,
+          isScrollControlled: true, // Allow custom height
           showDragHandle: true,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           builder: (context) {
-            return QRCodeContent(
-              dataQr: notification['data']?['dataQr'] ?? 'No QR Code Data',
+            return Container(
+              height: MediaQuery.of(context).size.height *
+                  0.7, // Set height to 70% of screen
+              child: QRCodeContent(
+                dataQr: notification['data']?['dataQr'] ?? 'No QR Code Data',
+              ),
             );
           },
         );
@@ -110,6 +115,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notifications'),
+        actions: [
+          TextButton(
+              onPressed: () async {
+                await NotificationState.clearNotifications();
+                _loadSavedNotifications();
+              },
+              child: Text("CLEAR ALL"))
+        ],
       ),
       body: notifications.isEmpty
           ? const Center(child: Text('No notifications'))

@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:xchange_app/login_state.dart';
 import 'package:xchange_app/match_exchange.dart';
 import 'package:xchange_app/receipt_screen.dart';
+import 'package:xchange_app/transaction_model.dart';
 
 class QRCodeContent extends StatefulWidget {
   final String dataQr;
@@ -20,13 +21,36 @@ class QRCodeContent extends StatefulWidget {
 }
 
 class _QRCodeContentState extends State<QRCodeContent> {
+  List<Transaction> _transaction = [];
+  String? name;
+
+  Future<void> _loadMatchExchanges() async {
+    var url = Uri.http('app01.karnetif.com', '/transaction/query/success');
+    var response = await http.post(url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({"name": name}));
+    final dynamic jsonData = jsonDecode(response.body);
+    setState(() {
+      if (jsonData is List) {
+        _transaction = jsonData
+            .map<Transaction>((data) => Transaction.fromJson(data))
+            .toList()
+          ..sort((a, b) => DateTime.parse(b.timestamp)
+              .compareTo(DateTime.parse(a.timestamp)));
+      } else {
+        print('Invalid response format');
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
         body: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,  // Center the entire column
           children: [
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -38,7 +62,16 @@ class _QRCodeContentState extends State<QRCodeContent> {
                 ),
               ),
             ),
-            Expanded(
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                "1. Please make sure QR Code scanned \n2. Make the exchange after scanned\n3. Click confirm after complete the exchange",
+                textAlign: TextAlign.center,  // Center the text
+                style: TextStyle(fontSize: 14),  // Optional: Adjust font size
+              ),
+            ),
+            Flexible(  // Use Flexible instead of Expanded
+              fit: FlexFit.loose,  // Ensures that the QR code doesn't stretch excessively
               child: Center(
                 child: QrImageView(
                   data: widget.dataQr,
@@ -55,7 +88,7 @@ class _QRCodeContentState extends State<QRCodeContent> {
                   },
                 ),
               ),
-            ),
+            ), 
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: ElevatedButton(
@@ -65,20 +98,16 @@ class _QRCodeContentState extends State<QRCodeContent> {
 
                     Navigator.popAndPushNamed(
                       context,
-                      '/checkout',
+                      '/receipt',
                       arguments: {
-                        'isVerified': true,
+                        'postId': decodedData['postId'],
                         'from': decodedData['from'],
                         'walletId': decodedData['walletId'],
                         'to': decodedData['to'],
-                        'toWalletId': decodedData['toWalletId'],
-                        'location': decodedData['location'],
                         'fromCurrency': decodedData['fromCurrency'],
                         'toCurrency': decodedData['toCurrency'],
                         'fromAmount': decodedData['fromAmount'],
                         'toAmount': decodedData['toAmount'],
-                        'decodedData': decodedData,
-                        'role': 'RECEIVER'
                       },
                     );
                   } catch (e) {

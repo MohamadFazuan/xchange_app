@@ -1,10 +1,8 @@
-import 'dart:convert'; // Add this import for JSON decoding
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:xchange_app/cash_checkout_nearby_screen.dart';
-import 'package:xchange_app/receipt_screen.dart';
-import 'package:http/http.dart' as http;
+import 'package:xchange_app/user_display.dart';
 
 class QRScanner extends StatefulWidget {
   const QRScanner({super.key});
@@ -14,7 +12,7 @@ class QRScanner extends StatefulWidget {
 }
 
 class _QRScannerState extends State<QRScanner> {
-  Barcode? barcode; // Keep this as Barcode?
+  Barcode? barcode;
   MobileScannerController cameraController = MobileScannerController();
   late Map<String, dynamic> expectedArgs;
   bool isVerified = false;
@@ -22,14 +20,40 @@ class _QRScannerState extends State<QRScanner> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    // Retrieve arguments passed to this page
     final args =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
 
     setState(() {
       expectedArgs = args;
     });
+  }
+
+  Future<void> _showExitConfirmation() async {
+    bool? exit = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Exit Scanner?'),
+        content: const Text('Are you sure you want to exit?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false), // Stay
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context, true); // Close dialog
+              Navigator.pushReplacementNamed(
+                  context, '/wallet'); // Go to wallet
+            },
+            child: const Text('Yes'),
+          ),
+        ],
+      ),
+    );
+
+    if (exit == true) {
+      Navigator.pushReplacementNamed(context, '/wallet');
+    }
   }
 
   void handleBarcode(BarcodeCapture capture) {
@@ -61,7 +85,6 @@ class _QRScannerState extends State<QRScanner> {
     try {
       _verifyScannedData(scannedData);
     } catch (e) {
-      print('Error processing QR code: $e');
       Fluttertoast.showToast(
         msg: 'Error processing QR code',
         toastLength: Toast.LENGTH_SHORT,
@@ -71,17 +94,14 @@ class _QRScannerState extends State<QRScanner> {
   }
 
   void _verifyScannedData(String scannedData) async {
-    print(scannedData);
     try {
       final decodedData = jsonDecode(scannedData) as Map<String, dynamic>;
       final isValid = _checkFields(decodedData);
 
       if (isValid) {
-        print(isValid);
-
-        // Return to the previous screen with arguments
         Navigator.pushNamed(context, '/checkout', arguments: {
           'isVerified': true,
+          'postId': decodedData['postId'],
           'from': decodedData['from'],
           'walletId': decodedData['walletId'],
           'to': decodedData['to'],
@@ -120,15 +140,6 @@ class _QRScannerState extends State<QRScanner> {
   }
 
   bool _checkFields(Map<String, dynamic> decodedData) {
-    // Check if the required fields exist in the scanned data
-    if (!decodedData.containsKey('fromCurrency') ||
-        !decodedData.containsKey('toCurrency') ||
-        !decodedData.containsKey('fromAmount') ||
-        !decodedData.containsKey('toAmount')) {
-      return false;
-    }
-
-    // Compare the necessary fields
     return expectedArgs['fromCurrency'] == decodedData['fromCurrency'] &&
         expectedArgs['toCurrency'] == decodedData['toCurrency'] &&
         expectedArgs['fromAmount'] == decodedData['fromAmount'] &&
@@ -137,40 +148,42 @@ class _QRScannerState extends State<QRScanner> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text("Snap Proof"),
-      ),
-      body: Stack(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          _showExitConfirmation();
+        }
+      },
+      child: Stack(
         children: [
-          MobileScanner(
-            onDetect: handleBarcode,
-            fit: BoxFit.contain,
+          Positioned.fill(
+            child: Scaffold(
+              appBar: AppBar(
+                automaticallyImplyLeading: false,
+                title: const Text("Snap Proof"),
+              ),
+              body: Stack(
+                alignment: Alignment.topCenter,
+                children: [
+                  Text('Scan the QR code to verify the transaction'),
+                  const SizedBox(height: 10),
+                  MobileScanner(
+                    controller: cameraController,
+                    onDetect: (capture) {
+                      Future.delayed(const Duration(milliseconds: 100))
+                          .then((_) {
+                        handleBarcode(capture);
+                      });
+                    },
+                    fit: BoxFit.fitWidth,
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
     );
-  }
-
-  Widget _verifyData(String data) {
-    try {
-      Map<String, dynamic> jsonData = jsonDecode(data);
-      return Column(
-        children: [
-          Text('Name: ${jsonData['name']}'),
-          Text('Wallet ID: ${jsonData['walletId']}'),
-          Text('From Currency: ${jsonData['fromCurrency']}'),
-          Text('To Currency: ${jsonData['toCurrency']}'),
-          Text('From Amount: ${jsonData['fromAmount']}'),
-          Text('To Amount: ${jsonData['toAmount']}'),
-          Text('From Date: ${jsonData['fromDate']}'),
-          Text('To Date: ${jsonData['toDate']}'),
-          Text('Location: ${jsonData['location']}'),
-        ],
-      );
-    } catch (e) {
-      return Text('Invalid data: $e');
-    }
   }
 }
